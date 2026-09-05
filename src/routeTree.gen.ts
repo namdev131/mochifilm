@@ -10,45 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as FavoritesRouteImport } from './routes/favorites'
-import { Route as HistoryRouteImport } from './routes/history'
-import { Route as LatestRouteImport } from './routes/latest'
-import { Route as McpRouteImport } from './routes/mcp'
-import { Route as MeRouteImport } from './routes/me'
-import { Route as NotificationsRouteImport } from './routes/notifications'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as SearchRouteImport } from './routes/search'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as UpcomingRouteImport } from './routes/upcoming'
-import { Route as WatchlistRouteImport } from './routes/watchlist'
-import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as ApiAdminRouteImport } from './routes/api/admin'
+import { Route as ApiEpisodeWatcherRouteImport } from './routes/api/episode-watcher'
+import { Route as ApiRatingsRouteImport } from './routes/api/ratings'
 import { Route as ApiWatchHistoryRouteImport } from './routes/api/watch-history'
 import { Route as ApiWatchPartyRouteImport } from './routes/api/watch-party'
-import { Route as BrowseIndexRouteImport } from './routes/browse.index'
-import { Route as CCodeRouteImport } from './routes/c.$code'
-import { Route as CollectionsIndexRouteImport } from './routes/collections.index'
-import { Route as CollectionsIdRouteImport } from './routes/collections.$id'
 import { Route as MovieSlugRouteImport } from './routes/movie.$slug'
-import { Route as PartyCodeRouteImport } from './routes/party.$code'
 import { Route as WatchSlugRouteImport } from './routes/watch.$slug'
-import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicVsmovStreamRouteImport } from './routes/api/public/vsmov-stream'
-import { Route as BrowseTypeValueRouteImport } from './routes/browse.$type.$value'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -56,81 +30,19 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FavoritesRoute = FavoritesRouteImport.update({
-  id: '/favorites',
-  path: '/favorites',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HistoryRoute = HistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LatestRoute = LatestRouteImport.update({
-  id: '/latest',
-  path: '/latest',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MeRoute = MeRouteImport.update({
-  id: '/me',
-  path: '/me',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotificationsRoute = NotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const UpcomingRoute = UpcomingRouteImport.update({
-  id: '/upcoming',
-  path: '/upcoming',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WatchlistRoute = WatchlistRouteImport.update({
-  id: '/watchlist',
-  path: '/watchlist',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const Char91DotwellKnownChar93OauthProtectedResourceRoute =
-  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiAdminRoute = ApiAdminRouteImport.update({
   id: '/api/admin',
   path: '/api/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEpisodeWatcherRoute = ApiEpisodeWatcherRouteImport.update({
+  id: '/api/episode-watcher',
+  path: '/api/episode-watcher',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRatingsRoute = ApiRatingsRouteImport.update({
+  id: '/api/ratings',
+  path: '/api/ratings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiWatchHistoryRoute = ApiWatchHistoryRouteImport.update({
@@ -143,34 +55,9 @@ const ApiWatchPartyRoute = ApiWatchPartyRouteImport.update({
   path: '/api/watch-party',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BrowseIndexRoute = BrowseIndexRouteImport.update({
-  id: '/browse/',
-  path: '/browse/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CCodeRoute = CCodeRouteImport.update({
-  id: '/c/$code',
-  path: '/c/$code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
-  id: '/collections/',
-  path: '/collections/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CollectionsIdRoute = CollectionsIdRouteImport.update({
-  id: '/collections/$id',
-  path: '/collections/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MovieSlugRoute = MovieSlugRouteImport.update({
   id: '/movie/$slug',
   path: '/movie/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartyCodeRoute = PartyCodeRouteImport.update({
-  id: '/party/$code',
-  path: '/party/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WatchSlugRoute = WatchSlugRouteImport.update({
@@ -178,262 +65,99 @@ const WatchSlugRoute = WatchSlugRouteImport.update({
   path: '/watch/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicVsmovStreamRoute = ApiPublicVsmovStreamRouteImport.update({
   id: '/api/public/vsmov-stream',
   path: '/api/public/vsmov-stream',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BrowseTypeValueRoute = BrowseTypeValueRouteImport.update({
-  id: '/browse/$type/$value',
-  path: '/browse/$type/$value',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/contact': typeof ContactRoute
-  '/favorites': typeof FavoritesRoute
-  '/history': typeof HistoryRoute
-  '/latest': typeof LatestRoute
-  '/mcp': typeof McpRoute
-  '/me': typeof MeRoute
-  '/notifications': typeof NotificationsRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/search': typeof SearchRoute
-  '/settings': typeof SettingsRoute
-  '/upcoming': typeof UpcomingRoute
-  '/watchlist': typeof WatchlistRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
-  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/admin': typeof ApiAdminRoute
+  '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
+  '/api/ratings': typeof ApiRatingsRoute
   '/api/watch-history': typeof ApiWatchHistoryRoute
   '/api/watch-party': typeof ApiWatchPartyRoute
-  '/c/$code': typeof CCodeRoute
-  '/collections/$id': typeof CollectionsIdRoute
   '/movie/$slug': typeof MovieSlugRoute
-  '/party/$code': typeof PartyCodeRoute
   '/watch/$slug': typeof WatchSlugRoute
-  '/browse/': typeof BrowseIndexRoute
-  '/collections/': typeof CollectionsIndexRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/vsmov-stream': typeof ApiPublicVsmovStreamRoute
-  '/browse/$type/$value': typeof BrowseTypeValueRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/contact': typeof ContactRoute
-  '/favorites': typeof FavoritesRoute
-  '/history': typeof HistoryRoute
-  '/latest': typeof LatestRoute
-  '/mcp': typeof McpRoute
-  '/me': typeof MeRoute
-  '/notifications': typeof NotificationsRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/search': typeof SearchRoute
-  '/settings': typeof SettingsRoute
-  '/upcoming': typeof UpcomingRoute
-  '/watchlist': typeof WatchlistRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
-  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/admin': typeof ApiAdminRoute
+  '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
+  '/api/ratings': typeof ApiRatingsRoute
   '/api/watch-history': typeof ApiWatchHistoryRoute
   '/api/watch-party': typeof ApiWatchPartyRoute
-  '/c/$code': typeof CCodeRoute
-  '/collections/$id': typeof CollectionsIdRoute
   '/movie/$slug': typeof MovieSlugRoute
-  '/party/$code': typeof PartyCodeRoute
   '/watch/$slug': typeof WatchSlugRoute
-  '/browse': typeof BrowseIndexRoute
-  '/collections': typeof CollectionsIndexRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/vsmov-stream': typeof ApiPublicVsmovStreamRoute
-  '/browse/$type/$value': typeof BrowseTypeValueRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/contact': typeof ContactRoute
-  '/favorites': typeof FavoritesRoute
-  '/history': typeof HistoryRoute
-  '/latest': typeof LatestRoute
-  '/mcp': typeof McpRoute
-  '/me': typeof MeRoute
-  '/notifications': typeof NotificationsRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/search': typeof SearchRoute
-  '/settings': typeof SettingsRoute
-  '/upcoming': typeof UpcomingRoute
-  '/watchlist': typeof WatchlistRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
-  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/admin': typeof ApiAdminRoute
+  '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
+  '/api/ratings': typeof ApiRatingsRoute
   '/api/watch-history': typeof ApiWatchHistoryRoute
   '/api/watch-party': typeof ApiWatchPartyRoute
-  '/c/$code': typeof CCodeRoute
-  '/collections/$id': typeof CollectionsIdRoute
   '/movie/$slug': typeof MovieSlugRoute
-  '/party/$code': typeof PartyCodeRoute
   '/watch/$slug': typeof WatchSlugRoute
-  '/browse/': typeof BrowseIndexRoute
-  '/collections/': typeof CollectionsIndexRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/vsmov-stream': typeof ApiPublicVsmovStreamRoute
-  '/browse/$type/$value': typeof BrowseTypeValueRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/auth'
-    | '/contact'
-    | '/favorites'
-    | '/history'
-    | '/latest'
-    | '/mcp'
-    | '/me'
-    | '/notifications'
-    | '/reset-password'
-    | '/search'
-    | '/settings'
-    | '/upcoming'
-    | '/watchlist'
-    | '/.mcp/list-tools'
-    | '/.well-known/oauth-protected-resource'
     | '/api/admin'
+    | '/api/episode-watcher'
+    | '/api/ratings'
     | '/api/watch-history'
     | '/api/watch-party'
-    | '/c/$code'
-    | '/collections/$id'
     | '/movie/$slug'
-    | '/party/$code'
     | '/watch/$slug'
-    | '/browse/'
-    | '/collections/'
-    | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/api/public/vsmov-stream'
-    | '/browse/$type/$value'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/auth'
-    | '/contact'
-    | '/favorites'
-    | '/history'
-    | '/latest'
-    | '/mcp'
-    | '/me'
-    | '/notifications'
-    | '/reset-password'
-    | '/search'
-    | '/settings'
-    | '/upcoming'
-    | '/watchlist'
-    | '/.mcp/list-tools'
-    | '/.well-known/oauth-protected-resource'
     | '/api/admin'
+    | '/api/episode-watcher'
+    | '/api/ratings'
     | '/api/watch-history'
     | '/api/watch-party'
-    | '/c/$code'
-    | '/collections/$id'
     | '/movie/$slug'
-    | '/party/$code'
     | '/watch/$slug'
-    | '/browse'
-    | '/collections'
-    | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/api/public/vsmov-stream'
-    | '/browse/$type/$value'
   id:
     | '__root__'
     | '/'
-    | '/admin'
     | '/auth'
-    | '/contact'
-    | '/favorites'
-    | '/history'
-    | '/latest'
-    | '/mcp'
-    | '/me'
-    | '/notifications'
-    | '/reset-password'
-    | '/search'
-    | '/settings'
-    | '/upcoming'
-    | '/watchlist'
-    | '/.mcp/list-tools'
-    | '/.well-known/oauth-protected-resource'
     | '/api/admin'
+    | '/api/episode-watcher'
+    | '/api/ratings'
     | '/api/watch-history'
     | '/api/watch-party'
-    | '/c/$code'
-    | '/collections/$id'
     | '/movie/$slug'
-    | '/party/$code'
     | '/watch/$slug'
-    | '/browse/'
-    | '/collections/'
-    | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/api/public/vsmov-stream'
-    | '/browse/$type/$value'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
-  ContactRoute: typeof ContactRoute
-  FavoritesRoute: typeof FavoritesRoute
-  HistoryRoute: typeof HistoryRoute
-  LatestRoute: typeof LatestRoute
-  McpRoute: typeof McpRoute
-  MeRoute: typeof MeRoute
-  NotificationsRoute: typeof NotificationsRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  SearchRoute: typeof SearchRoute
-  SettingsRoute: typeof SettingsRoute
-  UpcomingRoute: typeof UpcomingRoute
-  WatchlistRoute: typeof WatchlistRoute
-  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
-  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiAdminRoute: typeof ApiAdminRoute
+  ApiEpisodeWatcherRoute: typeof ApiEpisodeWatcherRoute
+  ApiRatingsRoute: typeof ApiRatingsRoute
   ApiWatchHistoryRoute: typeof ApiWatchHistoryRoute
   ApiWatchPartyRoute: typeof ApiWatchPartyRoute
-  CCodeRoute: typeof CCodeRoute
-  CollectionsIdRoute: typeof CollectionsIdRoute
   MovieSlugRoute: typeof MovieSlugRoute
-  PartyCodeRoute: typeof PartyCodeRoute
   WatchSlugRoute: typeof WatchSlugRoute
-  BrowseIndexRoute: typeof BrowseIndexRoute
-  CollectionsIndexRoute: typeof CollectionsIndexRoute
-  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
-  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicVsmovStreamRoute: typeof ApiPublicVsmovStreamRoute
-  BrowseTypeValueRoute: typeof BrowseTypeValueRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -445,13 +169,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -459,109 +176,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/favorites': {
-      id: '/favorites'
-      path: '/favorites'
-      fullPath: '/favorites'
-      preLoaderRoute: typeof FavoritesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/history': {
-      id: '/history'
-      path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof HistoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/latest': {
-      id: '/latest'
-      path: '/latest'
-      fullPath: '/latest'
-      preLoaderRoute: typeof LatestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/me': {
-      id: '/me'
-      path: '/me'
-      fullPath: '/me'
-      preLoaderRoute: typeof MeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notifications': {
-      id: '/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/upcoming': {
-      id: '/upcoming'
-      path: '/upcoming'
-      fullPath: '/upcoming'
-      preLoaderRoute: typeof UpcomingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/watchlist': {
-      id: '/watchlist'
-      path: '/watchlist'
-      fullPath: '/watchlist'
-      preLoaderRoute: typeof WatchlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.mcp/list-tools': {
-      id: '/.mcp/list-tools'
-      path: '/.mcp/list-tools'
-      fullPath: '/.mcp/list-tools'
-      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/admin': {
       id: '/api/admin'
       path: '/api/admin'
       fullPath: '/api/admin'
       preLoaderRoute: typeof ApiAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/episode-watcher': {
+      id: '/api/episode-watcher'
+      path: '/api/episode-watcher'
+      fullPath: '/api/episode-watcher'
+      preLoaderRoute: typeof ApiEpisodeWatcherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ratings': {
+      id: '/api/ratings'
+      path: '/api/ratings'
+      fullPath: '/api/ratings'
+      preLoaderRoute: typeof ApiRatingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/watch-history': {
@@ -578,46 +211,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWatchPartyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/browse/': {
-      id: '/browse/'
-      path: '/browse'
-      fullPath: '/browse/'
-      preLoaderRoute: typeof BrowseIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/c/$code': {
-      id: '/c/$code'
-      path: '/c/$code'
-      fullPath: '/c/$code'
-      preLoaderRoute: typeof CCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/collections/': {
-      id: '/collections/'
-      path: '/collections'
-      fullPath: '/collections/'
-      preLoaderRoute: typeof CollectionsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/collections/$id': {
-      id: '/collections/$id'
-      path: '/collections/$id'
-      fullPath: '/collections/$id'
-      preLoaderRoute: typeof CollectionsIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/movie/$slug': {
       id: '/movie/$slug'
       path: '/movie/$slug'
       fullPath: '/movie/$slug'
       preLoaderRoute: typeof MovieSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/party/$code': {
-      id: '/party/$code'
-      path: '/party/$code'
-      fullPath: '/party/$code'
-      preLoaderRoute: typeof PartyCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/watch/$slug': {
@@ -627,20 +225,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WatchSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.lovable/oauth/consent': {
-      id: '/.lovable/oauth/consent'
-      path: '/.lovable/oauth/consent'
-      fullPath: '/.lovable/oauth/consent'
-      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/vsmov-stream': {
       id: '/api/public/vsmov-stream'
       path: '/api/public/vsmov-stream'
@@ -648,60 +232,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicVsmovStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/browse/$type/$value': {
-      id: '/browse/$type/$value'
-      path: '/browse/$type/$value'
-      fullPath: '/browse/$type/$value'
-      preLoaderRoute: typeof BrowseTypeValueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
-  ContactRoute: ContactRoute,
-  FavoritesRoute: FavoritesRoute,
-  HistoryRoute: HistoryRoute,
-  LatestRoute: LatestRoute,
-  McpRoute: McpRoute,
-  MeRoute: MeRoute,
-  NotificationsRoute: NotificationsRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
-  SearchRoute: SearchRoute,
-  SettingsRoute: SettingsRoute,
-  UpcomingRoute: UpcomingRoute,
-  WatchlistRoute: WatchlistRoute,
-  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
-  Char91DotwellKnownChar93OauthProtectedResourceRoute:
-    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiAdminRoute: ApiAdminRoute,
+  ApiEpisodeWatcherRoute: ApiEpisodeWatcherRoute,
+  ApiRatingsRoute: ApiRatingsRoute,
   ApiWatchHistoryRoute: ApiWatchHistoryRoute,
   ApiWatchPartyRoute: ApiWatchPartyRoute,
-  CCodeRoute: CCodeRoute,
-  CollectionsIdRoute: CollectionsIdRoute,
   MovieSlugRoute: MovieSlugRoute,
-  PartyCodeRoute: PartyCodeRoute,
   WatchSlugRoute: WatchSlugRoute,
-  BrowseIndexRoute: BrowseIndexRoute,
-  CollectionsIndexRoute: CollectionsIndexRoute,
-  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
-  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicVsmovStreamRoute: ApiPublicVsmovStreamRoute,
-  BrowseTypeValueRoute: BrowseTypeValueRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
+import type { createStart } from '@tanstack/react-start'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

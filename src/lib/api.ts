@@ -81,6 +81,19 @@ function ophimImg(u?: string) {
 
 
 // ---------- Latest lists ----------
+export function sortByNewest(list: MovieCard[]): MovieCard[] {
+  return [...list].sort((a, b) => {
+    const timeA = a.modified ? Date.parse(a.modified) : 0;
+    const timeB = b.modified ? Date.parse(b.modified) : 0;
+    if (!isNaN(timeA) && !isNaN(timeB) && timeA > 0 && timeB > 0 && timeA !== timeB) {
+      return timeB - timeA;
+    }
+    const yearA = typeof a.year === "number" ? a.year : parseInt(String(a.year || 0), 10) || 0;
+    const yearB = typeof b.year === "number" ? b.year : parseInt(String(b.year || 0), 10) || 0;
+    return yearB - yearA;
+  });
+}
+
 export async function fetchLatest(source: SourceId, page = 1): Promise<MovieCard[]> {
   if (source === "aiphim" || source === "thuongkhung3d" || source === "animapper") {
     return publicApiLatest(source, page);
@@ -91,33 +104,66 @@ export async function fetchLatest(source: SourceId, page = 1): Promise<MovieCard
     );
     const j = await r.json();
     return (j.items || []).map(
-      (m: any): MovieCard => ({
-        slug: m.slug,
-        name: m.name,
-        origin_name: m.origin_name,
-        poster: kkImg(m.poster_url),
-        thumb: kkImg(m.thumb_url),
-        year: m.year,
-        quality: m.quality,
-        lang: m.lang,
-        episode_current: m.episode_current,
-        source: "kkphim",
-      }),
+      (m: any): MovieCard => {
+        const categoryList = (m.category || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
+        const countryList = (m.country || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
+        const isCinema = Boolean(
+          m.chieurap === true ||
+          m.chieu_rap === true ||
+          categoryList.some((c: string) => c.toLowerCase().includes("chiếu rạp") || c.toLowerCase().includes("chieu rap") || c === "phim-chieu-rap")
+        );
+        return {
+          slug: m.slug,
+          name: m.name,
+          origin_name: m.origin_name,
+          poster: kkImg(m.poster_url),
+          thumb: kkImg(m.thumb_url),
+          year: m.year,
+          quality: m.quality,
+          lang: m.lang,
+          episode_current: m.episode_current,
+          source: "kkphim",
+          type: m.type,
+          category: categoryList,
+          country: countryList,
+          chieu_rap: isCinema,
+          status: m.status,
+          modified: m.modified?.time || m.modified,
+        };
+      },
     );
   }
   if (source === "ophim") {
     const r = await fetch(`https://ophim1.com/danh-sach/phim-moi-cap-nhat?page=${page}`);
     const j = await r.json();
     return (j.items || []).map(
-      (m: any): MovieCard => ({
-        slug: m.slug,
-        name: m.name,
-        origin_name: m.origin_name,
-        poster: ophimImg(m.poster_url),
-        thumb: ophimImg(m.thumb_url),
-        year: m.year,
-        source: "ophim",
-      }),
+      (m: any): MovieCard => {
+        const categoryList = (m.category || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
+        const countryList = (m.country || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
+        const isCinema = Boolean(
+          m.chieurap === true ||
+          m.chieu_rap === true ||
+          categoryList.some((c: string) => c.toLowerCase().includes("chiếu rạp") || c.toLowerCase().includes("chieu rap") || c === "phim-chieu-rap")
+        );
+        return {
+          slug: m.slug,
+          name: m.name,
+          origin_name: m.origin_name,
+          poster: ophimImg(m.poster_url),
+          thumb: ophimImg(m.thumb_url),
+          year: m.year,
+          quality: m.quality,
+          lang: m.lang,
+          episode_current: m.episode_current,
+          source: "ophim",
+          type: m.type,
+          category: categoryList,
+          country: countryList,
+          chieu_rap: isCinema,
+          status: m.status,
+          modified: m.modified?.time || m.modified,
+        };
+      },
     );
   }
   if (source === "vsmov") return vsmovLatest(page);
@@ -127,14 +173,28 @@ export async function fetchLatest(source: SourceId, page = 1): Promise<MovieCard
   );
   const j = await r.json();
   return (j.items || []).map(
-    (m: any): MovieCard => ({
-      slug: m.slug,
-      name: m.name,
-      origin_name: m.original_name,
-      poster: m.poster_url || m.thumb_url,
-      thumb: m.thumb_url || m.poster_url,
-      source: "nguonc",
-    }),
+    (m: any): MovieCard => {
+      const totalEp = typeof m.total_episodes === "number" ? m.total_episodes : parseInt(m.total_episodes, 10);
+      const inferredType = totalEp === 1 ? "single" : totalEp > 1 ? "series" : m.type;
+      return {
+        slug: m.slug,
+        name: m.name,
+        origin_name: m.original_name,
+        poster: m.poster_url || m.thumb_url,
+        thumb: m.thumb_url || m.poster_url,
+        year: m.year,
+        quality: m.quality,
+        lang: m.language || m.lang,
+        episode_current: m.current_episode || m.episode_current,
+        source: "nguonc",
+        type: inferredType,
+        category: [],
+        country: [],
+        chieu_rap: false,
+        status: m.status,
+        modified: m.modified || m.created,
+      };
+    },
   );
 }
 
@@ -150,18 +210,33 @@ export async function searchMovies(q: string, source: SourceId): Promise<MovieCa
     const j = await r.json();
     const items = j?.data?.items || [];
     return items.map(
-      (m: any): MovieCard => ({
-        slug: m.slug,
-        name: m.name,
-        origin_name: m.origin_name,
-        poster: kkImg(m.poster_url),
-        thumb: kkImg(m.thumb_url),
-        year: m.year,
-        quality: m.quality,
-        lang: m.lang,
-        episode_current: m.episode_current,
-        source: "kkphim",
-      }),
+      (m: any): MovieCard => {
+        const categoryList = (m.category || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
+        const countryList = (m.country || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
+        const isCinema = Boolean(
+          m.chieurap === true ||
+          m.chieu_rap === true ||
+          categoryList.some((c: string) => c.toLowerCase().includes("chiếu rạp") || c.toLowerCase().includes("chieu rap") || c === "phim-chieu-rap")
+        );
+        return {
+          slug: m.slug,
+          name: m.name,
+          origin_name: m.origin_name,
+          poster: kkImg(m.poster_url),
+          thumb: kkImg(m.thumb_url),
+          year: m.year,
+          quality: m.quality,
+          lang: m.lang,
+          episode_current: m.episode_current,
+          source: "kkphim",
+          type: m.type,
+          category: categoryList,
+          country: countryList,
+          chieu_rap: isCinema,
+          status: m.status,
+          modified: m.modified?.time || m.modified,
+        };
+      },
     );
   }
   if (source === "ophim") {
@@ -171,14 +246,32 @@ export async function searchMovies(q: string, source: SourceId): Promise<MovieCa
     const j = await r.json();
     const items = j?.data?.items || [];
     return items.map(
-      (m: any): MovieCard => ({
-        slug: m.slug,
-        name: m.name,
-        poster: ophimImg(m.poster_url),
-        thumb: ophimImg(m.thumb_url),
-        year: m.year,
-        source: "ophim",
-      }),
+      (m: any): MovieCard => {
+        const categoryList = (m.category || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
+        const countryList = (m.country || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
+        const isCinema = Boolean(
+          m.chieurap === true ||
+          m.chieu_rap === true ||
+          categoryList.some((c: string) => c.toLowerCase().includes("chiếu rạp") || c.toLowerCase().includes("chieu rap") || c === "phim-chieu-rap")
+        );
+        return {
+          slug: m.slug,
+          name: m.name,
+          poster: ophimImg(m.poster_url),
+          thumb: ophimImg(m.thumb_url),
+          year: m.year,
+          quality: m.quality,
+          lang: m.lang,
+          episode_current: m.episode_current,
+          source: "ophim",
+          type: m.type,
+          category: categoryList,
+          country: countryList,
+          chieu_rap: isCinema,
+          status: m.status,
+          modified: m.modified?.time || m.modified,
+        };
+      },
     );
   }
   if (source === "vsmov") return vsmovSearch(q);
@@ -188,14 +281,28 @@ export async function searchMovies(q: string, source: SourceId): Promise<MovieCa
   );
   const j = await r.json();
   return (j.items || []).map(
-    (m: any): MovieCard => ({
-      slug: m.slug,
-      name: m.name,
-      origin_name: m.original_name,
-      poster: m.poster_url || m.thumb_url,
-      thumb: m.thumb_url || m.poster_url,
-      source: "nguonc",
-    }),
+    (m: any): MovieCard => {
+      const totalEp = typeof m.total_episodes === "number" ? m.total_episodes : parseInt(m.total_episodes, 10);
+      const inferredType = totalEp === 1 ? "single" : totalEp > 1 ? "series" : m.type;
+      return {
+        slug: m.slug,
+        name: m.name,
+        origin_name: m.original_name,
+        poster: m.poster_url || m.thumb_url,
+        thumb: m.thumb_url || m.poster_url,
+        year: m.year,
+        quality: m.quality,
+        lang: m.language || m.lang,
+        episode_current: m.current_episode || m.episode_current,
+        source: "nguonc",
+        type: inferredType,
+        category: [],
+        country: [],
+        chieu_rap: false,
+        status: m.status,
+        modified: m.modified || m.created,
+      };
+    },
   );
 }
 
@@ -343,8 +450,12 @@ export async function fetchLatestMerged(
   source: SourceFilter,
   page = 1,
 ): Promise<MovieCard[]> {
-  if (source !== "all") return fetchLatest(source, page);
-  return mergeMovies(await settled(ALL_SOURCES.map((s) => fetchLatest(s, page))));
+  if (source !== "all") {
+    const list = await fetchLatest(source, page);
+    return sortByNewest(list);
+  }
+  const merged = mergeMovies(await settled(ALL_SOURCES.map((s) => fetchLatest(s, page))));
+  return sortByNewest(merged);
 }
 
 const tokens = (s: string) =>

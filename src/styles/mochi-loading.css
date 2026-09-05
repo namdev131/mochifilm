@@ -1,0 +1,359 @@
+:root {
+  --mochi-pink: #ff4f86;
+  --mochi-pink2: #ff8daf;
+  --mochi-muted: #b7a5af;
+}
+
+#mochiLoading {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  background: radial-gradient(circle at 50% 47%, rgba(255, 79, 134, 0.16), transparent 24%),
+    linear-gradient(160deg, #080608, #120a11 55%, #070507);
+  transition: opacity 0.55s ease, visibility 0.55s ease;
+}
+
+#mochiLoading.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.mochi-loading-ambient {
+  position: absolute;
+  inset: -15%;
+  background: radial-gradient(circle at 20% 45%, rgba(255, 79, 134, 0.08), transparent 14%),
+    radial-gradient(circle at 78% 52%, rgba(255, 141, 175, 0.07), transparent 15%);
+  animation: mochiAmbient 5s ease-in-out infinite alternate;
+}
+
+@keyframes mochiAmbient {
+  to {
+    transform: scale(1.08) rotate(2deg);
+  }
+}
+
+.mochi-loading-orbit {
+  position: absolute;
+  width: min(82vw, 720px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.035);
+  animation: mochiSpin 18s linear infinite;
+}
+
+.mochi-loading-orbit:before,
+.mochi-loading-orbit:after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 79, 134, 0.085);
+}
+
+.mochi-loading-orbit:before {
+  inset: 14%;
+}
+
+.mochi-loading-orbit:after {
+  inset: 29%;
+  border-color: rgba(255, 255, 255, 0.035);
+}
+
+@keyframes mochiSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mochi-loading-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mochi-loading-sparkles i {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ff91b3;
+  box-shadow: 0 0 14px rgba(255, 79, 134, 0.8);
+  animation: mochiTwinkle 2.4s ease-in-out infinite;
+}
+
+.mochi-loading-sparkles i:nth-child(1) {
+  left: 15%;
+  top: 25%;
+}
+
+.mochi-loading-sparkles i:nth-child(2) {
+  right: 16%;
+  top: 30%;
+  animation-delay: -0.7s;
+}
+
+.mochi-loading-sparkles i:nth-child(3) {
+  left: 24%;
+  bottom: 20%;
+  animation-delay: -1.2s;
+}
+
+.mochi-loading-sparkles i:nth-child(4) {
+  right: 25%;
+  bottom: 22%;
+  animation-delay: -1.8s;
+}
+
+@keyframes mochiTwinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.6);
+  }
+}
+
+.mochi-loading-card {
+  position: relative;
+  z-index: 2;
+  width: min(490px, calc(100vw - 32px));
+  padding: 22px 24px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 32px;
+  background: linear-gradient(180deg, rgba(32, 20, 30, 0.84), rgba(14, 9, 14, 0.74));
+  box-shadow: 0 35px 110px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  text-align: center;
+}
+
+.mochi-loading-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ff9bb9;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.mochi-loading-brand-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mochi-pink);
+  box-shadow: 0 0 12px var(--mochi-pink);
+}
+
+.mochi-loading-pet-stage {
+  position: relative;
+  height: 250px;
+  display: grid;
+  place-items: center;
+  margin: -3px 0 -5px;
+}
+
+.mochi-loading-pet-glow {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 190px;
+  height: 105px;
+  border-radius: 50%;
+  background: rgba(255, 79, 134, 0.17);
+  filter: blur(35px);
+  transform: translate(-50%, -50%);
+  animation: mochiGlow 1.65s ease-in-out infinite alternate;
+}
+
+@keyframes mochiGlow {
+  to {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1.18);
+  }
+}
+
+.mochi-loading-pet-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 27px;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 19px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.42);
+  filter: blur(9px);
+}
+
+#petCanvas {
+  position: relative;
+  z-index: 2;
+  width: 220px;
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 16px 16px rgba(0, 0, 0, 0.28));
+}
+
+.mochi-loading-bubble {
+  position: absolute;
+  z-index: 3;
+  right: 25px;
+  top: 28px;
+  max-width: 140px;
+  padding: 8px 11px;
+  border-radius: 15px 15px 4px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffe0e9;
+  background: rgba(37, 22, 34, 0.9);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.35;
+  animation: mochiBob 1.9s ease-in-out infinite;
+}
+
+@keyframes mochiBob {
+  50% {
+    transform: translateY(-5px) rotate(1deg);
+  }
+}
+
+.mochi-loading-title {
+  margin: 0;
+  font-size: clamp(20px, 5vw, 27px);
+  letter-spacing: -0.035em;
+  color: #fff;
+  font-weight: 800;
+}
+
+.mochi-loading-desc {
+  min-height: 39px;
+  max-width: 350px;
+  margin: 8px auto 16px;
+  color: var(--mochi-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.mochi-loading-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.mochi-loading-track {
+  position: relative;
+  flex: 1;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #2b1b28;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.mochi-loading-fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff9dbc, #ff6d9b 50%, #ff4f86);
+  box-shadow: 0 0 16px rgba(255, 79, 134, 0.45);
+  transition: width 0.18s ease;
+}
+
+.mochi-loading-fill:after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(105deg, transparent 10%, rgba(255, 255, 255, 0.42) 38%, transparent 62%);
+  transform: translateX(-120%);
+  animation: mochiShine 1.3s linear infinite;
+}
+
+@keyframes mochiShine {
+  to {
+    transform: translateX(120%);
+  }
+}
+
+.mochi-loading-percent {
+  width: 40px;
+  text-align: right;
+  color: #ffd0df;
+  font-size: 11px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+
+.mochi-loading-steps {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.mochi-loading-steps i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #5b3d50;
+  transition: 0.25s;
+}
+
+.mochi-loading-steps i.active {
+  background: #ff6796;
+  box-shadow: 0 0 11px rgba(255, 79, 134, 0.6);
+  transform: scale(1.2);
+}
+
+.mochi-loading-skip-hint {
+  margin-top: 14px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: color 0.15s ease;
+  user-select: none;
+}
+
+.mochi-loading-skip-hint:hover {
+  color: #ff9bb9;
+}
+
+@media (max-width: 560px) {
+  .mochi-loading-card {
+    padding: 18px 17px 20px;
+    border-radius: 25px;
+  }
+  .mochi-loading-pet-stage {
+    height: 220px;
+  }
+  #petCanvas {
+    width: 195px;
+  }
+  .mochi-loading-bubble {
+    right: 2px;
+    top: 22px;
+    max-width: 118px;
+    font-size: 9px;
+  }
+  .mochi-loading-orbit {
+    width: 115vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

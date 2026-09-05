@@ -1,0 +1,48 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import assert from "node:assert";
+
+const root = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const source = readFileSync(join(root, "src/components/player/PlayerControls.tsx"), "utf8");
+const hook = readFileSync(join(root, "src/components/player/hooks/usePlayerControlsVisibility.ts"), "utf8");
+const chrome = readFileSync(join(root, "src/components/player/PlayerControlsChrome.tsx"), "utf8");
+const progress = readFileSync(join(root, "src/components/player/PlayerProgress.tsx"), "utf8");
+const settings = readFileSync(join(root, "src/components/player/PlayerSettingsMenu.tsx"), "utf8");
+const css = readFileSync(join(root, "src/styles/player-controls.css"), "utf8");
+
+assert(source.includes("usePlayerControlsVisibility"), "PlayerControls phải dùng hook visibility riêng");
+assert(source.includes("<PlayerControlsChrome"), "PlayerControls phải dùng chrome component riêng");
+assert(chrome.includes("<PlayerProgress"), "Chrome phải dùng progress component riêng");
+assert(hook.includes('matchMedia("(hover: none), (pointer: coarse)")'), "Thiếu phát hiện thiết bị cảm ứng");
+assert(hook.includes("controlsLocked"), "Thiếu trạng thái khóa công cụ");
+assert(hook.includes("controlsVisible"), "Thiếu trạng thái ẩn/hiện công cụ");
+assert(hook.includes("handlePlayerPointerUp"), "Thiếu thao tác chạm chỉ hiện/ẩn công cụ");
+assert(hook.includes("handlePlayerMouseMove"), "Thiếu di chuột để hiện công cụ desktop");
+assert(chrome.includes('aria-label={controlsLocked ? "Mở khóa công cụ" : "Khóa công cụ"}'), "Thiếu nút khóa có nhãn truy cập");
+assert(chrome.includes("player-mobile-primary-controls"), "Thiếu hàng điều khiển chính mobile");
+assert(progress.includes('role="slider"'), "Progress thiếu slider keyboard/ARIA");
+const videoTag = source.match(/<video\s+[\s\S]*?>/)?.[0] || "";
+assert(!videoTag.includes("onClick={togglePlay}"), "Chạm video không được tự play/pause");
+assert(css.includes(".controls-hidden"), "Thiếu trạng thái CSS ẩn công cụ");
+assert(css.includes(".player-controls-lock"), "Thiếu CSS nút khóa công cụ");
+assert(css.includes("@media (hover: hover) and (pointer: fine)"), "Thiếu hành vi hover riêng cho desktop");
+assert(css.includes("@media (hover: none), (pointer: coarse)"), "Thiếu layout touch riêng");
+assert(chrome.indexOf("<PlayerProgress") < chrome.indexOf('className="player-mobile-primary-controls"'), "Progress phải nằm trên hàng Play/±10");
+assert(css.includes(".player-page-root .player-mobile-primary-controls"), "Thiếu selector .player-mobile-primary-controls");
+assert(css.includes("top: 50%") && css.includes("left: 50%"), "Cụm Play/±10 phải nằm chính giữa video player trên mobile");
+assert(css.includes(".center-play") && css.includes("display: none"), "Mobile phải ẩn nút centerPlay trùng lặp");
+assert(css.includes("width: 40px") && css.includes("height: 40px"), "Nút tua mobile phải nhỏ gọn, vẫn đủ vùng chạm");
+assert(css.includes("width: 52px") && css.includes("height: 52px"), "Nút Play mobile phải chuẩn kích thước 52px");
+assert(source.includes('document.addEventListener("fullscreenchange"'), "Thiếu listener fullscreenchange");
+assert(source.includes('orientation.lock?.("landscape")'), "Mobile fullscreen phải yêu cầu xoay ngang");
+assert(source.includes("orientation.unlock?.()"), "Thoát fullscreen phải mở khóa xoay màn hình");
+assert(chrome.includes("onToggleSubtitles") && chrome.includes("onToggleSettings"), "Nút phụ đề/settings phải có handler thật");
+assert(settings.includes('id="playerSettingsMenu"'), "Thiếu menu cài đặt player");
+assert(source.includes("hls.currentLevel = level"), "Thiếu đổi chất lượng HLS thật");
+assert(source.includes("hls.subtitleTrack = track"), "Thiếu đổi phụ đề HLS thật");
+assert(source.includes('localStorage.setItem("mochi-player-volume"'), "Âm lượng chưa được ghi nhớ");
+assert(source.includes('localStorage.setItem("mochi-player-speed"'), "Tốc độ chưa được ghi nhớ");
+assert(progress.includes("bufferedPercent"), "Progress thiếu trạng thái buffer thật");
+assert(!readFileSync(join(root, "src/styles/player.css"), "utf8").includes(".player-controls-lock"), "CSS controls còn dồn trong player.css");
+
+console.log("Player controls visibility contract: PASS");

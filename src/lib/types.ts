@@ -21,6 +21,13 @@ export interface MovieCard {
   lang?: string;
   episode_current?: string;
   source: SourceId;
+  category?: string[];
+  country?: string[];
+  vote_average?: number;
+  type?: "single" | "series" | "hoathinh" | "tvshows" | string;
+  status?: string;
+  chieu_rap?: boolean;
+  modified?: string;
 }
 
 export interface EpisodeServerItem {

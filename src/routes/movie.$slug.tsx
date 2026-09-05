@@ -1,273 +1,390 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
-import { Play, ArrowLeft, Clapperboard, UsersRound, MessageCircle } from "lucide-react";
-import { fetchDetail } from "@/lib/api";
-import type { SourceId } from "@/lib/types";
-import DOMPurify from "isomorphic-dompurify";
-import { FavoriteButton } from "@/components/FavoriteButton";
-import { WatchLaterButton } from "@/components/WatchLaterButton";
-import { FollowButton } from "@/components/FollowButton";
-import { RatingStars } from "@/components/RatingStars";
-import { CommentsSection } from "@/components/CommentsSection";
-import { AddToCollectionButton } from "@/components/AddToCollectionButton";
-import { CinemaTicket } from "@/components/CinemaTicket";
-import { useAuth } from "@/hooks/useAuth";
-import { ticketOwnerLabel } from "@/lib/tickets";
+import type { SourceId, EpisodeServerItem, MovieCard } from "@/lib/types";
+import { fetchDetail, fetchLatest, SOURCES } from "@/lib/api";
 
-const searchSchema = z.object({
-  src: z
-    .enum([
-      "kkphim",
-      "ophim",
-      "nguonc",
-      "vsmov",
-      "rapchieuphim",
-      "aiphim",
-      "thuongkhung3d",
-      "animapper",
-    ])
-    .default("kkphim"),
-});
+import "@/styles/details.css";
+import { DetailSidebar } from "@/components/movie-detail/DetailSidebar";
+import { DetailTopbar } from "@/components/movie-detail/DetailTopbar";
+import { DetailHero } from "@/components/movie-detail/DetailHero";
+import { DetailTabs, type DetailTabType } from "@/components/movie-detail/DetailTabs";
+import { DetailContent } from "@/components/movie-detail/DetailContent";
+import { DetailCast } from "@/components/movie-detail/DetailCast";
+import { DetailComments } from "@/components/movie-detail/DetailComments";
+import { DetailRecommendations } from "@/components/movie-detail/DetailRecommendations";
+import { DetailMobileNav } from "@/components/movie-detail/DetailMobileNav";
+
+export interface MovieSearchParams {
+  source?: SourceId;
+}
 
 export const Route = createFileRoute("/movie/$slug")({
-  validateSearch: searchSchema,
-  component: MoviePage,
+  validateSearch: (search: Record<string, unknown>): MovieSearchParams => ({
+    source: (search.source as SourceId) || "kkphim",
+  }),
+  component: MovieDetailPage,
 });
 
-function MoviePage() {
+function MovieDetailPage() {
   const { slug } = Route.useParams();
-  const { src } = Route.useSearch();
-  const source = src as SourceId;
-  const { user } = useAuth();
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["detail", source, slug],
-    queryFn: () => fetchDetail(slug, source),
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+
+  const currentSource: SourceId = search.source || "kkphim";
+
+  // Toast notification
+  const [toastMessage, setToastMessage] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setShowToast(true);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setShowToast(false);
+    }, 1800);
+  };
+
+  // Fetch movie details
+  const {
+    data: movie,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["movieDetail", slug, currentSource],
+    queryFn: () => fetchDetail(slug, currentSource),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-16 md:px-10">
-        <div className="h-64 rounded-lg bg-card shimmer" />
-      </div>
-    );
-  }
-  if (error || !data) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
-        <h2 className="text-xl font-semibold">Không tải được thông tin phim</h2>
-        <Link to="/" className="mt-4 inline-block text-primary">
-          Về trang nhà
-        </Link>
-      </div>
-    );
-  }
+  // Fetch recommendations from current source
+  const { data: latestMovies = [] } = useQuery({
+    queryKey: ["recommendations", currentSource],
+    queryFn: () => fetchLatest(currentSource, 1),
+    staleTime: 1000 * 60 * 5,
+  });
 
-  const totalEps = data.servers[0]?.items.length || 0;
-  const sanitized = DOMPurify.sanitize(data.content || "");
-  const owner = ticketOwnerLabel(
-    user
-      ? {
-          displayName: (user.user_metadata?.display_name || user.user_metadata?.full_name) as
-            string | undefined,
-          email: user.email,
-        }
-      : null,
-  );
+  // Active Tab
+  const [activeTab, setActiveTab] = useState<DetailTabType>("info");
+
+  const handleTabChange = (tab: DetailTabType) => {
+    setActiveTab(tab);
+    const map: Record<DetailTabType, string> = {
+      info: "infoPanel",
+      cast: "castPanel",
+      comments: "commentsPanel",
+      suggested: "suggestedPanel",
+    };
+    const element = document.getElementById(map[tab]);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  // Favorites state synced with localStorage
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("lv-favorites") || "[]";
+      const favs = JSON.parse(raw);
+      setIsFavorite(favs.some((f: any) => f.slug === slug));
+    } catch {
+      // ignore
+    }
+  }, [slug]);
+
+  const toggleFavorite = () => {
+    if (!movie) return;
+    try {
+      const raw = localStorage.getItem("lv-favorites") || "[]";
+      let favs: MovieCard[] = JSON.parse(raw);
+      const exists = favs.some((f) => f.slug === slug);
+      if (exists) {
+        favs = favs.filter((f) => f.slug !== slug);
+        setIsFavorite(false);
+        triggerToast("Đã bỏ khỏi danh sách yêu thích");
+      } else {
+        favs.push({
+          slug: movie.slug,
+          name: movie.name,
+          origin_name: movie.origin_name,
+          poster: movie.poster,
+          thumb: movie.thumb,
+          source: currentSource,
+          year: movie.year,
+          quality: movie.quality,
+        });
+        setIsFavorite(true);
+        triggerToast("Đã thêm vào danh sách yêu thích");
+      }
+      localStorage.setItem("lv-favorites", JSON.stringify(favs));
+      window.dispatchEvent(new CustomEvent("lv-favorites-sync"));
+    } catch {
+      triggerToast("Không thể cập nhật danh sách yêu thích");
+    }
+  };
+
+  // Streaming & Episode Player
+  const [activeEpisode, setActiveEpisode] = useState<EpisodeServerItem | null>(null);
+  const [activeServerIndex, setActiveServerIndex] = useState<number>(0);
+  const [activeEpisodeIndex, setActiveEpisodeIndex] = useState<number>(0);
+  const [activeStreamUrl, setActiveStreamUrl] = useState<string | null>(null);
+
+  // Restore last watched episode and server if available in lv-progress
+  useEffect(() => {
+    if (!movie) return;
+    try {
+      const raw = localStorage.getItem("lv-progress") || "{}";
+      const map = JSON.parse(raw);
+      const prefix = `${currentSource}:${movie.slug}:`;
+      const matchingKey = Object.keys(map).find((k) => k.startsWith(prefix));
+      if (matchingKey) {
+        const parts = matchingKey.split(":");
+        const savedSrv = parseInt(parts[2], 10);
+        const savedEp = parseInt(parts[3], 10);
+        if (!isNaN(savedSrv)) setActiveServerIndex(savedSrv);
+        if (!isNaN(savedEp)) setActiveEpisodeIndex(savedEp);
+      }
+    } catch {
+      // ignore
+    }
+  }, [movie?.slug, currentSource]);
+
+  const handleSelectEpisode = (ep: EpisodeServerItem, srvIdx: number, epIdx: number) => {
+    if (!movie) return;
+    const stream = ep.m3u8 || ep.embed;
+    if (!stream) {
+      triggerToast("Tập phim chưa có nguồn phát");
+      return;
+    }
+
+    setActiveEpisode(ep);
+    setActiveServerIndex(srvIdx);
+    setActiveEpisodeIndex(epIdx);
+
+    // Save to real watch progress in localStorage
+    try {
+      const raw = localStorage.getItem("lv-progress") || "{}";
+      const map = JSON.parse(raw);
+      const key = `${currentSource}:${movie.slug}:${srvIdx}:${epIdx}`;
+      const existing = map[key];
+      const pos = typeof existing?.position === "number" ? existing.position : 0;
+      const dur = typeof existing?.duration === "number" ? existing.duration : 0;
+      map[key] = {
+        slug: movie.slug,
+        name: movie.name,
+        origin_name: movie.origin_name,
+        thumb: movie.thumb || movie.poster,
+        poster: movie.poster || movie.thumb,
+        source: currentSource,
+        ep: epIdx,
+        srv: srvIdx,
+        episode_name: ep.name,
+        position: pos,
+        duration: dur,
+        updatedAt: Date.now(),
+      };
+      localStorage.setItem("lv-progress", JSON.stringify(map));
+      window.dispatchEvent(new CustomEvent("lv-history-sync"));
+    } catch {
+      // ignore
+    }
+
+    // Chuyển thẳng sang trang video player chuyên biệt và kích hoạt loading animation
+    if (typeof window !== "undefined" && (window as any).MochiLoader?.showMovie) {
+      (window as any).MochiLoader.showMovie(movie.name, currentSourceName);
+    }
+    navigate({
+      to: "/watch/$slug",
+      params: { slug: movie.slug },
+      search: {
+        source: currentSource,
+        ep: epIdx,
+        srv: srvIdx,
+      },
+    });
+  };
+
+  const handleWatchNow = () => {
+    if (!movie) return;
+    if (typeof window !== "undefined" && (window as any).MochiLoader?.showMovie) {
+      (window as any).MochiLoader.showMovie(movie.name, currentSourceName);
+    }
+    navigate({
+      to: "/watch/$slug",
+      params: { slug: movie.slug },
+      search: {
+        source: currentSource,
+        ep: activeEpisodeIndex ?? 0,
+        srv: activeServerIndex ?? 0,
+      },
+    });
+  };
+
+  const handleWatchTrailer = () => {
+    const trailer = (movie as any)?.trailer_url;
+    if (trailer) {
+      window.open(trailer, "_blank");
+    } else {
+      triggerToast("Phim chưa có đoạn giới thiệu từ nguồn này");
+    }
+  };
+
+  const handleWatchParty = () => {
+    handleWatchNow();
+  };
+
+  const handleSourceChange = (newSource: SourceId) => {
+    if (newSource === currentSource) return;
+    const sourceObj = SOURCES.find((s) => s.id === newSource);
+    triggerToast(`Đã chuyển nguồn sang ${sourceObj?.label || newSource}`);
+    if (typeof window !== "undefined" && (window as any).MochiLoader?.showMovie) {
+      (window as any).MochiLoader.showMovie(movie?.name || slug, sourceObj?.label || newSource);
+    }
+    navigate({
+      to: "/movie/$slug",
+      params: { slug },
+      search: { source: newSource },
+    });
+  };
+
+  const currentSourceObj = SOURCES.find((s) => s.id === currentSource);
+  const currentSourceName = currentSourceObj?.label || currentSource;
+
+  // Kích hoạt Mochi Loading Animation khi tải dữ liệu chi tiết phim từ máy chủ
+  useEffect(() => {
+    if (isLoading) {
+      const movieTitle = (movie as any)?.name || slug;
+      (window as any).MochiLoader?.showMovie?.(movieTitle, currentSourceName);
+    } else {
+      (window as any).MochiLoader?.finishMovie?.();
+    }
+  }, [isLoading, (movie as any)?.name, slug, currentSourceName]);
 
   return (
-    <div className="relative">
-      <div className="absolute inset-x-0 top-0 h-[420px] overflow-hidden">
-        {data.thumb && (
-          <img src={data.thumb} alt="" className="h-full w-full object-cover opacity-40" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
-      </div>
+    <div className="details-root">
+      {/* Sidebar */}
+      <DetailSidebar onShowToast={triggerToast} />
 
-      <div className="relative mx-auto max-w-[1400px] px-4 pb-16 pt-6 md:px-10">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Trang nhà
-        </Link>
+      {/* Main Content Area */}
+      <main className="app">
+        {/* Topbar */}
+        <DetailTopbar
+          onShowToast={triggerToast}
+        />
 
-        <div className="mt-6 grid gap-6 md:grid-cols-[240px_1fr] lg:gap-10">
-          <div>
-            <div className="aspect-[2/3] overflow-hidden rounded-lg ring-1 ring-border/60">
-              {data.poster && (
-                <img src={data.poster} alt={data.name} className="h-full w-full object-cover" />
-              )}
+        {isLoading ? (
+          <div
+            className="movie-loading-stage"
+            style={{
+              padding: "100px 20px",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 380,
+            }}
+          >
+            <div className="mochi-loading-brand" style={{ marginBottom: 16 }}>
+              <span className="mochi-loading-brand-dot" />
+              Mochi Film
+            </div>
+            <div style={{ fontSize: 44, marginBottom: 12, animation: "pulse 2s infinite" }}>🎬</div>
+            <div style={{ color: "#fff", fontSize: 18, fontWeight: 800, marginBottom: 6 }}>
+              Đang tải thông tin phim...
+            </div>
+            <div style={{ color: "var(--muted)", fontSize: 13, maxWidth: 420 }}>
+              Đang nạp dữ liệu chi tiết từ máy chủ {currentSourceName}
             </div>
           </div>
-          <div className="space-y-4">
-            <div>
-              <h1 className="text-3xl font-black tracking-tight md:text-4xl">{data.name}</h1>
-              {data.origin_name && (
-                <p className="text-sm text-muted-foreground">{data.origin_name}</p>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              {data.quality && <Badge>{data.quality}</Badge>}
-              {data.lang && <Badge>{data.lang}</Badge>}
-              {data.year && <Badge>{data.year}</Badge>}
-              {data.time && <Badge>{data.time}</Badge>}
-              {data.episode_current && <Badge>{data.episode_current}</Badge>}
-              <Badge className="bg-primary/15 text-primary">Nguồn: {source.toUpperCase()}</Badge>
-            </div>
-            {data.category && data.category.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 text-xs">
-                {data.category.map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-full border border-border px-2.5 py-1 text-muted-foreground"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              {totalEps > 0 && (
-                <Link
-                  to="/watch/$slug"
-                  params={{ slug: data.slug }}
-                  search={{ src: source, ep: 0, srv: 0 }}
-                  className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
+        ) : error || !movie ? (
+          <div
+            style={{
+              padding: "60px 20px",
+              textAlign: "center",
+              background: "rgba(255,255,255,0.02)",
+              borderRadius: 18,
+              border: "1px solid var(--line)",
+            }}
+          >
+            <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+            <h2 style={{ fontSize: 18, marginBottom: 8, color: "#fff" }}>
+              Không thể tải phim trên nguồn {currentSourceName}
+            </h2>
+            <p style={{ color: "var(--muted)", fontSize: 12, maxWidth: 500, margin: "0 auto 20px" }}>
+              Máy chủ {currentSourceName} có thể chưa cập nhật tựa phim này hoặc đường truyền đang bận.
+              Vui lòng thử chuyển sang nguồn phim khác.
+            </p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              {SOURCES.filter((s) => s.id !== currentSource).map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className="btn"
+                  onClick={() => handleSourceChange(s.id)}
                 >
-                  <Play className="h-4 w-4 fill-current" /> Phát phim
-                </Link>
-              )}
-              <FavoriteButton
-                slug={data.slug}
-                name={data.name}
-                poster={data.poster}
-                source={source}
-              />
-              <WatchLaterButton
-                slug={data.slug}
-                name={data.name}
-                poster={data.poster}
-                source={source}
-              />
-              <FollowButton
-                slug={data.slug}
-                name={data.name}
-                poster={data.poster}
-                source={source}
-                episodes={totalEps}
-              />
-              <AddToCollectionButton
-                slug={data.slug}
-                name={data.name}
-                poster={data.poster}
-                source={source}
-              />
-              <Link
-                to="/forum/movie/$movieSlug"
-                params={{ movieSlug: data.slug }}
-                search={{ src: source }}
-                className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2.5 text-sm font-semibold hover:border-primary hover:text-primary"
-              >
-                <MessageCircle className="h-4 w-4" />
-                Thảo luận phim
-              </Link>
-            </div>
-            <RatingStars slug={data.slug} name={data.name} poster={data.poster} source={source} />
-            <CinemaTicket
-              slug={data.slug}
-              name={data.name}
-              poster={data.poster}
-              source={source}
-              userId={user?.id}
-              owner={owner}
-            />
-            {sanitized && (
-              <div
-                className="prose prose-invert prose-sm max-w-none text-muted-foreground"
-                dangerouslySetInnerHTML={{ __html: sanitized }}
-              />
-            )}
-            <div className="grid gap-3 border-t border-border/60 pt-4 text-sm md:grid-cols-2">
-              {data.director?.length ? (
-                <div className="flex gap-3 rounded-md bg-card p-3">
-                  <Clapperboard className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <div>
-                    <div className="text-xs text-muted-foreground">Đạo diễn</div>
-                    <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 font-medium">
-                      {data.director.map((director) => (
-                        <Link
-                          key={director}
-                          to="/director/$name"
-                          params={{ name: director }}
-                          search={{ src: source }}
-                          className="underline decoration-primary/45 underline-offset-4 hover:text-primary"
-                        >
-                          {director}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-              {data.actors?.length ? (
-                <div className="flex gap-3 rounded-md bg-card p-3">
-                  <UsersRound className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                  <div>
-                    <div className="text-xs text-muted-foreground">Diễn viên</div>
-                    <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 font-medium leading-6">
-                      {data.actors.map((actor) => (
-                        <Link
-                          key={actor}
-                          to="/actor/$name"
-                          params={{ name: actor }}
-                          search={{ src: source }}
-                          className="underline decoration-gold/45 underline-offset-4 hover:text-gold"
-                        >
-                          {actor}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-              {data.country?.length ? (
-                <div>
-                  <span className="text-muted-foreground">Quốc gia:</span> {data.country.join(", ")}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {/* Server list preview */}
-        {data.servers.length > 0 && (
-          <div className="mt-10 space-y-4">
-            <h2 className="text-lg font-semibold">Danh sách máy chủ</h2>
-            <div className="flex flex-wrap gap-2">
-              {data.servers.map((s, i) => (
-                <Link
-                  key={i}
-                  to="/watch/$slug"
-                  params={{ slug: data.slug }}
-                  search={{ src: source, ep: 0, srv: i }}
-                  className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium hover:border-primary hover:text-primary"
-                >
-                  {s.server_name} · {s.items.length} tập
-                </Link>
+                  Chuyển sang {s.label}
+                </button>
               ))}
             </div>
           </div>
-        )}
+        ) : (
+          <>
+            {/* Hero Details Section */}
+            <DetailHero
+              movie={movie}
+              isFavorite={isFavorite}
+              currentSource={currentSource}
+              activeServerIndex={activeServerIndex}
+              activeEpisodeIndex={activeEpisodeIndex}
+              onToggleFavorite={toggleFavorite}
+              onWatchNow={handleWatchNow}
+              onWatchTrailer={handleWatchTrailer}
+              onWatchParty={handleWatchParty}
+            />
 
-        <CommentsSection slug={data.slug} source={source} />
+            {/* Navigation Tabs */}
+            <DetailTabs activeTab={activeTab} onTabChange={handleTabChange} />
+
+            {/* Content Grid (Description + Facts + Player vs Cast + Comments) */}
+            <section className="content-grid">
+              <DetailContent
+                movie={movie}
+                activeEpisode={activeEpisode}
+                activeServerIndex={activeServerIndex}
+                activeEpisodeIndex={activeEpisodeIndex}
+                activeStreamUrl={activeStreamUrl}
+                onSelectEpisode={handleSelectEpisode}
+                onClosePlayer={() => setActiveStreamUrl(null)}
+              />
+
+              <div>
+                <DetailCast actors={movie.actors} />
+                <DetailComments movieSlug={movie.slug} onShowToast={triggerToast} />
+              </div>
+            </section>
+
+            {/* Recommendations Section */}
+            <DetailRecommendations
+              movies={latestMovies.filter((m) => m.slug !== slug)}
+              currentSource={currentSource}
+              onShowToast={triggerToast}
+            />
+          </>
+        )}
+      </main>
+
+      {/* Mobile Floating Bottom Bar */}
+      <DetailMobileNav onShowToast={triggerToast} />
+
+      {/* Toast popup */}
+      <div className={`toast ${showToast ? "show" : ""}`} id="toast">
+        {toastMessage}
       </div>
     </div>
-  );
-}
-
-function Badge({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span className={`rounded-md bg-muted px-2 py-1 font-medium ${className}`}>{children}</span>
   );
 }
