@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { supabase } from "@/lib/supabase";
+import { useSignIn, useSignUp } from "@clerk/clerk-react";
 import "@/styles/auth.css";
 
 interface AuthSearchParams {
@@ -19,6 +19,8 @@ export const Route = createFileRoute("/auth")({
 export function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
+  const { signIn, setActive: setActiveSignIn } = useSignIn();
+  const { signUp, setActive: setActiveSignUp } = useSignUp();
 
   const [mode, setMode] = useState<"login" | "register">(search.mode || "login");
   const [name, setName] = useState("");
@@ -29,6 +31,8 @@ export function AuthPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [agreedTerms, setAgreedTerms] = useState(false);
+  const [awaitingVerification, setAwaitingVerification] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ show: boolean; msg: string }>({ show: false, msg: "" });
@@ -49,6 +53,7 @@ export function AuthPage() {
   };
 
   const validate = (): boolean => {
+    if (awaitingVerification) return /^\d{6}$/.test(verificationCode.trim());
     const errs: Record<string, string> = {};
 
     if (mode === "register" && !name.trim()) {
@@ -84,63 +89,42 @@ export function AuthPage() {
     setIsLoading(true);
 
     try {
-      if (mode === "login") {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
+      if (awaitingVerification) {
+        if (!signUp) throw new Error("Clerk chưa sẵn sàng");
+        const result = await signUp.attemptEmailAddressVerification({
+          code: verificationCode.trim(),
         });
+        if (result.status !== "complete") throw new Error("Mã xác minh chưa hoàn tất");
+        await setActiveSignUp({ session: result.createdSessionId });
+        navigate({ to: search.redirect || "/" });
+        return;
+      }
+      if (mode === "login") {
+        if (!signIn) throw new Error("Clerk chưa sẵn sàng");
+        const result = await signIn.create({ identifier: email.trim(), password });
+        if (result.status !== "complete") throw new Error("Cần thêm bước xác thực trong Clerk");
+        await setActiveSignIn({ session: result.createdSessionId });
 
-        if (error) {
-          showToastMsg(error.message === "Invalid login credentials"
-            ? "Email hoặc mật khẩu không chính xác."
-            : error.message);
-          setIsLoading(false);
-          return;
-        }
-
-        const userObj = {
-          email: data.user?.email,
-          name: data.user?.user_metadata?.full_name || data.user?.email?.split("@")[0] || "Thành viên Mochi",
-        };
-
-        if (typeof window !== "undefined") {
-          localStorage.setItem("mochi_user", JSON.stringify(userObj));
-          window.dispatchEvent(new CustomEvent("mochi:user-changed", { detail: userObj }));
-        }
-
-        showToastMsg(`Đăng nhập thành công! Chào mừng ${userObj.name} ♡`);
+        showToastMsg("Đăng nhập thành công! ♡");
         setTimeout(() => {
           navigate({ to: search.redirect || "/" });
         }, 800);
       } else {
-        // Register mode
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+        if (!signUp) throw new Error("Clerk chưa sẵn sàng");
+        const result = await signUp.create({
+          emailAddress: email.trim(),
           password,
-          options: {
-            data: {
-              full_name: name.trim(),
-            },
-          },
+          firstName: name.trim(),
         });
-
-        if (error) {
-          showToastMsg(error.message);
-          setIsLoading(false);
+        if (result.status !== "complete") {
+          await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+          setAwaitingVerification(true);
+          showToastMsg("Clerk đã gửi mã xác minh email. Hoàn tất xác minh để đăng nhập.");
           return;
         }
+        await setActiveSignUp({ session: result.createdSessionId });
 
-        const userObj = {
-          email: data.user?.email,
-          name: name.trim() || data.user?.email?.split("@")[0] || "Thành viên Mochi",
-        };
-
-        if (typeof window !== "undefined") {
-          localStorage.setItem("mochi_user", JSON.stringify(userObj));
-          window.dispatchEvent(new CustomEvent("mochi:user-changed", { detail: userObj }));
-        }
-
-        showToastMsg(`Đăng ký thành công! Chào mừng ${userObj.name} gia nhập Mochi Film ♡`);
+        showToastMsg(`Đăng ký thành công! Chào mừng ${name.trim()} gia nhập Mochi Film ♡`);
         setTimeout(() => {
           navigate({ to: search.redirect || "/" });
         }, 1000);
@@ -154,34 +138,31 @@ export function AuthPage() {
 
   const handleOAuth = async (provider: "google" | "facebook") => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/` : "/",
-        },
+      if (!signIn) throw new Error("Clerk chưa sẵn sàng");
+      await signIn.authenticateWithRedirect({
+        strategy: provider === "google" ? "oauth_google" : "oauth_facebook",
+        redirectUrl: "/auth",
+        redirectUrlComplete: search.redirect || "/",
       });
-      if (error) {
-        showToastMsg(`Không thể kết nối với ${provider}: ${error.message}`);
-      }
-    } catch {
-      showToastMsg(`Đăng nhập với ${provider} thất bại. Vui lòng thử lại.`);
+    } catch (error) {
+      showToastMsg(error instanceof Error ? error.message : `Đăng nhập với ${provider} thất bại.`);
     }
   };
 
   const handleForgotPassword = async () => {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setErrors((prev) => ({ ...prev, email: "Vui lòng nhập email hợp lệ để khôi phục mật khẩu." }));
+      setErrors((prev) => ({
+        ...prev,
+        email: "Vui lòng nhập email hợp lệ để khôi phục mật khẩu.",
+      }));
       showToastMsg("Vui lòng điền email vào ô bên dưới trước.");
       return;
     }
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
-      if (error) {
-        showToastMsg(error.message);
-      } else {
-        showToastMsg(`Đã gửi hướng dẫn khôi phục mật khẩu đến ${email.trim()}!`);
-      }
+      if (!signIn) throw new Error("Clerk chưa sẵn sàng");
+      await signIn.create({ strategy: "reset_password_email_code", identifier: email.trim() });
+      showToastMsg(`Đã gửi mã khôi phục mật khẩu đến ${email.trim()}!`);
     } catch {
       showToastMsg("Không thể gửi yêu cầu đặt lại mật khẩu lúc này.");
     }
@@ -189,6 +170,8 @@ export function AuthPage() {
 
   const switchMode = (newMode: "login" | "register") => {
     setMode(newMode);
+    setAwaitingVerification(false);
+    setVerificationCode("");
     setErrors({});
   };
 
@@ -203,19 +186,25 @@ export function AuthPage() {
       {/* 1. Header Topbar */}
       <header className="auth-topbar">
         <Link to="/" className="auth-brand-link" aria-label="Về trang chủ Mochi Film">
-          <img
-            src="/assets/mochi/wordmark.webp"
-            alt="Mochi Film"
-            className="auth-brand-logo"
-          />
+          <img src="/assets/mochi/wordmark.webp" alt="Mochi Film" className="auth-brand-logo" />
         </Link>
 
         <nav className="auth-nav">
-          <Link to="/" search={{ nav: "trang-chu" }}>Trang chủ</Link>
-          <Link to="/" search={{ nav: "phim-moi" }}>Phim mới</Link>
-          <Link to="/" search={{ nav: "phim-le" }}>Phim lẻ</Link>
-          <Link to="/" search={{ nav: "phim-bo" }}>Phim bộ</Link>
-          <Link to="/" search={{ nav: "chieu-rap" }}>Chiếu rạp</Link>
+          <Link to="/" search={{ nav: "trang-chu" }}>
+            Trang chủ
+          </Link>
+          <Link to="/" search={{ nav: "phim-moi" }}>
+            Phim mới
+          </Link>
+          <Link to="/" search={{ nav: "phim-le" }}>
+            Phim lẻ
+          </Link>
+          <Link to="/" search={{ nav: "phim-bo" }}>
+            Phim bộ
+          </Link>
+          <Link to="/" search={{ nav: "chieu-rap" }}>
+            Chiếu rạp
+          </Link>
         </nav>
 
         <div className="auth-header-actions">
@@ -262,11 +251,7 @@ export function AuthPage() {
         <section className="auth-card">
           {/* Logo chính thức Mochi Film đồng bộ 100% */}
           <Link to="/" className="flex items-center justify-center mb-1">
-            <img
-              src="/assets/mochi/wordmark.webp"
-              alt="Mochi Film"
-              className="auth-card-logo"
-            />
+            <img src="/assets/mochi/wordmark.webp" alt="Mochi Film" className="auth-card-logo" />
           </Link>
 
           <p className="auth-card-kicker">Phim hay · Cảm xúc thật · Luôn có Mochi bên bạn</p>
@@ -281,8 +266,20 @@ export function AuthPage() {
           </p>
 
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            {awaitingVerification && (
+              <div className="auth-field">
+                <input
+                  id="verificationCode"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="Mã xác minh email gồm 6 số"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                />
+              </div>
+            )}
             {/* Họ và tên (chỉ hiển thị khi Đăng ký) */}
-            {mode === "register" && (
+            {mode === "register" && !awaitingVerification && (
               <div className={`auth-field ${errors.name ? "invalid" : ""}`}>
                 <svg
                   className="auth-field-icon"
@@ -433,11 +430,7 @@ export function AuthPage() {
                   <span>Ghi nhớ đăng nhập</span>
                 </label>
 
-                <button
-                  type="button"
-                  className="auth-text-link"
-                  onClick={handleForgotPassword}
-                >
+                <button type="button" className="auth-text-link" onClick={handleForgotPassword}>
                   Quên mật khẩu?
                 </button>
               </div>
@@ -472,18 +465,18 @@ export function AuthPage() {
             {mode === "register" && errors.terms && (
               <div className="auth-field-error -mt-1 mb-1">{errors.terms}</div>
             )}
+            {mode === "register" && !awaitingVerification && <div id="clerk-captcha" />}
 
             {/* Nút Submit */}
-            <button
-              id="submitBtn"
-              type="submit"
-              disabled={isLoading}
-              className="auth-submit"
-            >
-              <span>{mode === "login" ? "Đăng nhập →" : "Đăng ký tài khoản →"}</span>
-              {isLoading && (
-                <span className="inline-block animate-spin ml-2">↻</span>
-              )}
+            <button id="submitBtn" type="submit" disabled={isLoading} className="auth-submit">
+              <span>
+                {awaitingVerification
+                  ? "Xác minh email →"
+                  : mode === "login"
+                    ? "Đăng nhập →"
+                    : "Đăng ký tài khoản →"}
+              </span>
+              {isLoading && <span className="inline-block animate-spin ml-2">↻</span>}
             </button>
 
             {/* Divider */}
@@ -543,9 +536,33 @@ export function AuthPage() {
         <div>© Mochi Film · Những bộ phim làm cuộc sống ngọt ngào hơn.</div>
         <div className="auth-footer-links">
           <Link to="/">Trang chủ</Link>
-          <a href="#" onClick={(e) => { e.preventDefault(); showToastMsg("Chính sách điều khoản Mochi Film"); }}>Điều khoản</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); showToastMsg("Quyền riêng tư Mochi Film"); }}>Quyền riêng tư</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); showToastMsg("Liên hệ hỗ trợ: support@mochifilm.vn"); }}>Hỗ trợ</a>
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              showToastMsg("Chính sách điều khoản Mochi Film");
+            }}
+          >
+            Điều khoản
+          </a>
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              showToastMsg("Quyền riêng tư Mochi Film");
+            }}
+          >
+            Quyền riêng tư
+          </a>
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              showToastMsg("Liên hệ hỗ trợ: support@mochifilm.vn");
+            }}
+          >
+            Hỗ trợ
+          </a>
         </div>
       </footer>
 

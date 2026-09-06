@@ -2,6 +2,7 @@ import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-r
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { MochiLoadingScreen } from "@/components/common/MochiLoadingScreen";
+import { AuthDataProvider } from "@/lib/auth-data-provider";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -10,7 +11,11 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Mochi Film - Rạp Chiếu Phim Trực Tuyến Đỉnh Cao" },
-      { name: "description", content: "Xem phim bom tấn, phim lẻ, phim bộ, anime chất lượng 4K Ultra HD miễn phí với giao diện hiện đại cùng Mochi Film." },
+      {
+        name: "description",
+        content:
+          "Xem phim bom tấn, phim lẻ, phim bộ, anime chất lượng 4K Ultra HD miễn phí với giao diện hiện đại cùng Mochi Film.",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -40,10 +45,12 @@ function RootComponent() {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <MochiLoadingScreen />
-    </QueryClientProvider>
+    <AuthDataProvider>
+      <QueryClientProvider client={queryClient}>
+        <Outlet />
+        <MochiLoadingScreen />
+      </QueryClientProvider>
+    </AuthDataProvider>
   );
 }
 

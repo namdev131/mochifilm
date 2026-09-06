@@ -1,6 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useMemo, useRef, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useClerk, useUser } from "@clerk/clerk-react";
+import { useMutation, useQuery as useConvexQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { VipNoticeModal } from "@/components/home/VipNoticeModal";
 import { SourceSelectorModal } from "@/components/home/SourceSelectorModal";
 import { MoviePreviewModal } from "@/components/home/MoviePreviewModal";
@@ -65,7 +68,7 @@ import {
   mergeMovies,
   sortByNewest,
 } from "../lib/api";
-import { supabase, isSupabaseConfigured } from "../lib/supabase";
+
 
 export interface HomeSearchParams {
   nav?: string;
@@ -343,6 +346,15 @@ async function fetchCategoryMoviesFromApi(
 export function HomePage() {
   const searchParams = Route.useSearch();
   const navigate = Route.useNavigate();
+  const { signOut } = useClerk();
+  const { user } = useUser();
+  const syncUser = useMutation(api.users.syncCurrent);
+  const convexHistory = useConvexQuery(api.watchHistory.list, user ? {} : "skip");
+  const convexNotifications = useConvexQuery(api.notifications.list, user ? {} : "skip");
+  const removeHistory = useMutation(api.watchHistory.remove);
+  const clearHistory = useMutation(api.watchHistory.clear);
+  const markRead = useMutation(api.notifications.markRead);
+  const markAllRead = useMutation(api.notifications.markAllRead);
 
   // Navigation & filtering state
   const [selectedNav, setSelectedNav] = useState<string>("trang-chu");
@@ -360,16 +372,9 @@ export function HomePage() {
   const mainContentRef = useRef<HTMLElement>(null);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
 
-  // Realtime Supabase Auth State
-  const [currentUser, setCurrentUser] = useState<{ email?: string; name?: string } | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const stored = localStorage.getItem("mochi_user");
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  const currentUser = user
+    ? { email: user.primaryEmailAddress?.emailAddress, name: user.fullName || user.firstName || "Thành viên Mochi" }
+    : null;
 
   // Real Hero Detail from API
   const [heroDetail, setHeroDetail] = useState<{
@@ -504,10 +509,9 @@ export function HomePage() {
   const trendingMovies = useMemo(() => latestMovies.slice(0, 10), [latestMovies]);
   const [sourcePings, setSourcePings] = useState<Record<string, number>>({});
 
-  // Real Notifications from Supabase (No Mock Notifications)
+  // Convex realtime data
   const [realNotifications, setRealNotifications] = useState<RealNotification[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState<number>(0);
-  const [userSessionId, setUserSessionId] = useState<string | null>(null);
 
   // Real User Data (No Fake Progress / No Fake Favorites)
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
@@ -562,59 +566,19 @@ export function HomePage() {
     // 2. Load Real Watch History from session or localStorage
     let loadedHistory: ContinueWatchItem[] = [];
 
-    // Attempt to read from /api/watch-history if Supabase session token exists
-    try {
-      let token: string | null = null;
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.startsWith("sb-") || key.includes("supabase.auth.token"))) {
-          const raw = localStorage.getItem(key);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            token = parsed?.access_token || parsed?.currentSession?.access_token || null;
-            if (token) break;
-          }
-        }
-      }
-
-      if (token) {
-        const res = await fetch("/api/watch-history", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ action: "list" }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.history) && data.history.length > 0) {
-            loadedHistory = data.history.map((row: any) => {
-              const pos = Number(row.position_seconds) || 0;
-              const dur = Number(row.duration_seconds) || 1;
-              const pct = dur > 0 ? Math.min(100, Math.round((pos / dur) * 100)) : 0;
-              return {
-                slug: row.slug,
-                name: row.name,
-                thumb: row.poster || "",
-                poster: row.poster || "",
-                episode_name:
-                  row.episode_name ||
-                  (row.ep_index !== undefined ? `Tập ${row.ep_index + 1}` : "Đang xem"),
-                progressPercent: pct,
-                durationLeft: dur > pos ? `Còn ${Math.max(1, Math.round((dur - pos) / 60))} phút` : "Đã xong",
-                source: (row.source as SourceId) || "kkphim",
-                positionSeconds: pos,
-                durationSeconds: dur,
-                epIndex: row.ep_index ?? 0,
-                srvIndex: row.srv_index ?? 0,
-              };
-            });
-          }
-        }
-      }
-    } catch {
-      // ignore
+    if (convexHistory?.length) {
+      loadedHistory = convexHistory.map((row) => {
+        const pos = row.positionSeconds;
+        const dur = row.durationSeconds || 1;
+        return {
+          slug: row.slug, name: row.name, thumb: row.poster || "", poster: row.poster || "",
+          episode_name: row.episodeName || `Tập ${row.epIndex + 1}`,
+          progressPercent: Math.min(100, Math.round((pos / dur) * 100)),
+          durationLeft: dur > pos ? `Còn ${Math.max(1, Math.round((dur - pos) / 60))} phút` : "Đã xong",
+          source: row.source as SourceId, positionSeconds: pos, durationSeconds: dur,
+          epIndex: row.epIndex, srvIndex: row.srvIndex, updatedAt: row.watchedAt,
+        };
+      });
     }
 
     // Fallback: Read real local progress from "lv-progress", "mochi_watch_history", or "lv-watch-history"
@@ -683,7 +647,7 @@ export function HomePage() {
       window.removeEventListener("lv-favorites-sync", handleSync);
       window.removeEventListener("storage", handleSync);
     };
-  }, []);
+  }, [convexHistory]);
 
   // Keyboard Escape listener for confirmDialog
   useEffect(() => {
@@ -695,48 +659,9 @@ export function HomePage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [confirmDialog]);
 
-  // Realtime Supabase Auth state listener
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const syncUser = (user: { email?: string; name?: string } | null) => {
-      setCurrentUser(user);
-    };
-
-    const handleUserChanged = (e: any) => {
-      if (e?.detail?.user) {
-        syncUser(e.detail.user);
-      } else {
-        syncUser(null);
-      }
-    };
-    window.addEventListener("mochi:user-changed", handleUserChanged);
-
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        syncUser({
-          email: data.user.email,
-          name: data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "Thành viên Mochi",
-        });
-      }
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        syncUser({
-          email: session.user.email,
-          name: session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "Thành viên Mochi",
-        });
-      } else {
-        syncUser(null);
-      }
-    });
-
-    return () => {
-      window.removeEventListener("mochi:user-changed", handleUserChanged);
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+    if (user) void syncUser();
+  }, [user?.id]);
 
   // -------------------------------------------------------------
   // Ping sources for latency health (60s polling & cleanup)
@@ -754,178 +679,30 @@ export function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // -------------------------------------------------------------
-  // Supabase Realtime Subscription & cleanup
-  // -------------------------------------------------------------
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const channel = supabase
-      .channel("watch_history_realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "watch_history" },
-        () => {
-          reloadRealUserData();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  // -------------------------------------------------------------
-  // Realtime User Notifications (Supabase postgres_changes)
-  // -------------------------------------------------------------
-  const loadUserNotifications = async (userId: string) => {
-    if (!isSupabaseConfigured) {
-      setRealNotifications([]);
-      setUnreadNotificationCount(0);
-      return;
-    }
-    try {
-      const { data, error } = await supabase
-        .from("notifications")
-        .select("id,title,body,slug,source,poster,read,created_at")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (!error && data) {
-        setRealNotifications(data as RealNotification[]);
-        setUnreadNotificationCount(data.filter((n: any) => !n.read).length);
-      } else {
-        setRealNotifications([]);
-        setUnreadNotificationCount(0);
-      }
-    } catch {
-      setRealNotifications([]);
-      setUnreadNotificationCount(0);
-    }
-  };
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    let activeNotifChannel: ReturnType<typeof supabase.channel> | null = null;
-
-    const initNotifSubscription = async () => {
-      if (!isSupabaseConfigured) {
-        setUserSessionId(null);
-        setRealNotifications([]);
-        setUnreadNotificationCount(0);
-        return;
-      }
-
-      const { data } = await supabase.auth.getSession();
-      const uid = data.session?.user?.id;
-
-      if (uid) {
-        setUserSessionId(uid);
-        await loadUserNotifications(uid);
-
-        activeNotifChannel = supabase
-          .channel(`user_notifs_${uid}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "notifications",
-              filter: `user_id=eq.${uid}`,
-            },
-            (payload) => {
-              if (payload.eventType === "INSERT") {
-                const newNotif = payload.new as RealNotification;
-                setRealNotifications((prev) => [newNotif, ...prev.filter((n) => n.id !== newNotif.id)]);
-                if (!newNotif.read) {
-                  setUnreadNotificationCount((c) => c + 1);
-                }
-              } else if (payload.eventType === "UPDATE") {
-                const updated = payload.new as RealNotification;
-                setRealNotifications((prev) => {
-                  const next = prev.map((n) => (n.id === updated.id ? updated : n));
-                  setUnreadNotificationCount(next.filter((n) => !n.read).length);
-                  return next;
-                });
-              } else {
-                loadUserNotifications(uid);
-              }
-            },
-          )
-          .subscribe();
-      } else {
-        setUserSessionId(null);
-        setRealNotifications([]);
-        setUnreadNotificationCount(0);
-      }
-    };
-
-    initNotifSubscription();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (activeNotifChannel) {
-        supabase.removeChannel(activeNotifChannel);
-        activeNotifChannel = null;
-      }
-      const uid = session?.user?.id;
-      if (uid) {
-        setUserSessionId(uid);
-        loadUserNotifications(uid);
-        activeNotifChannel = supabase
-          .channel(`user_notifs_${uid}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "notifications",
-              filter: `user_id=eq.${uid}`,
-            },
-            () => {
-              loadUserNotifications(uid);
-            },
-          )
-          .subscribe();
-      } else {
-        setUserSessionId(null);
-        setRealNotifications([]);
-        setUnreadNotificationCount(0);
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-      if (activeNotifChannel) {
-        supabase.removeChannel(activeNotifChannel);
-      }
-    };
-  }, []);
+    const rows = convexNotifications ?? [];
+    setRealNotifications(
+      rows.map((row) => ({
+        id: row._id,
+        title: row.title,
+        body: row.body ?? null,
+        slug: row.slug ?? null,
+        source: row.source ?? null,
+        poster: row.poster ?? null,
+        read: row.read,
+        created_at: new Date(row.createdAt).toISOString(),
+      })),
+    );
+    setUnreadNotificationCount(rows.filter((row) => !row.read).length);
+  }, [convexNotifications]);
 
   const markNotificationRead = async (notif: RealNotification) => {
-    if (!userSessionId || notif.read) return;
-    try {
-      await supabase.from("notifications").update({ read: true } as never).eq("id", notif.id);
-      setRealNotifications((prev) =>
-        prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)),
-      );
-      setUnreadNotificationCount((c) => Math.max(0, c - 1));
-    } catch {
-      // ignore
-    }
+    if (!user || notif.read) return;
+    await markRead({ id: notif.id as never });
   };
 
   const markAllNotificationsRead = async () => {
-    if (!userSessionId) return;
-    try {
-      await supabase.from("notifications").update({ read: true } as never).eq("user_id", userSessionId);
-      setRealNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadNotificationCount(0);
-    } catch {
-      // ignore
-    }
+    if (user) await markAllRead();
   };
 
   // Ping sources for latency health
@@ -1207,33 +984,7 @@ export function HomePage() {
       // ignore
     }
 
-    // Sync delete to backend if logged in
-    try {
-      let token: string | null = null;
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.startsWith("sb-") || key.includes("supabase.auth.token"))) {
-          const raw = localStorage.getItem(key);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            token = parsed?.access_token || parsed?.currentSession?.access_token || null;
-            if (token) break;
-          }
-        }
-      }
-      if (token) {
-        fetch("/api/watch-history", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ action: "delete", slug }),
-        }).catch(() => { });
-      }
-    } catch {
-      // ignore
-    }
+    if (user) void removeHistory({ slug });
 
     setContinueList((prev) => prev.filter((item) => item.slug !== slug));
     window.dispatchEvent(new CustomEvent("lv-history-sync"));
@@ -1259,35 +1010,7 @@ export function HomePage() {
     } catch {
       // ignore
     }
-    // Sync clear to backend if logged in
-    try {
-      let token: string | null = null;
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.startsWith("sb-") || key.includes("supabase.auth.token"))) {
-          const raw = localStorage.getItem(key);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            token = parsed?.access_token || parsed?.currentSession?.access_token || null;
-            if (token) break;
-          }
-        }
-      }
-      if (token && continueList.length > 0) {
-        continueList.forEach((item) => {
-          fetch("/api/watch-history", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ action: "delete", slug: item.slug }),
-          }).catch(() => { });
-        });
-      }
-    } catch {
-      // ignore
-    }
+    if (user) void clearHistory();
     setContinueList([]);
     window.dispatchEvent(new CustomEvent("lv-history-sync"));
   };
@@ -2890,20 +2613,7 @@ export function HomePage() {
                           type="button"
                           onClick={async () => {
                             setShowUserMenu(false);
-                            try {
-                              await supabase.auth.signOut();
-                            } catch {
-                              // ignore
-                            }
-                            try {
-                              localStorage.removeItem("mochi_user");
-                            } catch {
-                              // ignore
-                            }
-                            setCurrentUser(null);
-                            window.dispatchEvent(
-                              new CustomEvent("mochi:user-changed", { detail: { user: null } }),
-                            );
+                            await signOut();
                           }}
                           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
                         >
