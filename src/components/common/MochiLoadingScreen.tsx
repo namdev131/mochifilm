@@ -123,21 +123,10 @@ function getLoggedInUserName(): string {
   return "bạn";
 }
 
-// Cờ ghi nhận chỉ hiển thị animation chào mừng khi mới vào web, không hiển thị khi chuyển trang thông thường
-let hasShownInitialWebLoading = false;
-
 export const MochiLoadingScreen: React.FC = () => {
-  // Chỉ chạy chào mừng lần đầu khi mới vào web (hoặc refresh trang)
-  const isFirstVisit = !hasShownInitialWebLoading;
-  if (!hasShownInitialWebLoading) {
-    hasShownInitialWebLoading = true;
-  }
-
-  const [loadingMode, setLoadingMode] = useState<"initial" | "movie" | "none">(
-    isFirstVisit ? "initial" : "none"
-  );
-  const [isVisible, setIsVisible] = useState<boolean>(isFirstVisit);
-  const [isRemoved, setIsRemoved] = useState<boolean>(!isFirstVisit);
+  const [loadingMode, setLoadingMode] = useState<"initial" | "movie" | "none">("initial");
+  const [isVisible, setIsVisible] = useState(true);
+  const [isRemoved, setIsRemoved] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentState, setCurrentState] = useState<string>("waving");
   const [titleText, setTitleText] = useState("Mochi đang chào bạn");
@@ -274,8 +263,6 @@ export const MochiLoadingScreen: React.FC = () => {
 
   // Initial welcome sequence (chỉ chạy lần đầu vào web)
   useEffect(() => {
-    if (!isFirstVisit) return;
-
     const name = getLoggedInUserName();
     setUserName(name);
     setTitleText(userText("Mochi đang chào {name}", name));
@@ -311,7 +298,7 @@ export const MochiLoadingScreen: React.FC = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isFirstVisit, draw, handleFinish, userText]);
+  }, [draw, handleFinish, userText]);
 
   // Window API & Event listeners
   useEffect(() => {

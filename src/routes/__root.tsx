@@ -45,12 +45,14 @@ function RootComponent() {
   );
 
   return (
-    <AuthDataProvider>
-      <QueryClientProvider client={queryClient}>
-        <Outlet />
-        <MochiLoadingScreen />
-      </QueryClientProvider>
-    </AuthDataProvider>
+    <>
+      <AuthDataProvider>
+        <QueryClientProvider client={queryClient}>
+          <Outlet />
+        </QueryClientProvider>
+      </AuthDataProvider>
+      <MochiLoadingScreen />
+    </>
   );
 }
 
