@@ -1,8 +1,21 @@
 import { useState } from "react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent, MouseEvent } from "react";
 import {
-  Captions, Expand, Film, Gauge, Lock, Maximize, Pause, Play, RotateCcw, RotateCw,
-  Server, Settings, Unlock, Volume2, VolumeX,
+  Captions,
+  Expand,
+  Film,
+  Gauge,
+  Lock,
+  Maximize,
+  Pause,
+  Play,
+  RotateCcw,
+  RotateCw,
+  Server,
+  Settings,
+  Unlock,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { PlayerProgress } from "./PlayerProgress";
 import { PlayerSettingsMenu } from "./PlayerSettingsMenu";
@@ -55,23 +68,57 @@ interface PlayerControlsChromeProps {
 
 export function PlayerControlsChrome(props: PlayerControlsChromeProps) {
   const {
-    visible, controlsLocked, isPlaying, isSeeking, isMuted, isTheater,
-    currentTime, duration, bufferedPercent, volume, playbackSpeed, quality,
-    settingsOpen, subtitlesEnabled, qualities, qualityLevel, subtitles, subtitleTrack, posterUrl,
-    isEmbed, hasHls, hasEmbed, formatTime,
-    onTogglePlay, onToggleLock, onSkip, onToggleMute, onVolumeChange,
-    onSpeedChange, onSpeedValueChange, onToggleSubtitles, onToggleSettings,
-    onQualityChange, onSubtitleChange, onToggleTheater, onToggleFullscreen,
-    onToggleStreamMode, onOpenEpisodes, onOpenServers, onSeekingChange,
-    onSeek, onProgressKeyDown,
+    visible,
+    controlsLocked,
+    isPlaying,
+    isSeeking,
+    isMuted,
+    isTheater,
+    currentTime,
+    duration,
+    bufferedPercent,
+    volume,
+    playbackSpeed,
+    quality,
+    settingsOpen,
+    subtitlesEnabled,
+    qualities,
+    qualityLevel,
+    subtitles,
+    subtitleTrack,
+    posterUrl,
+    isEmbed,
+    hasHls,
+    hasEmbed,
+    formatTime,
+    onTogglePlay,
+    onToggleLock,
+    onSkip,
+    onToggleMute,
+    onVolumeChange,
+    onSpeedChange,
+    onSpeedValueChange,
+    onToggleSubtitles,
+    onToggleSettings,
+    onQualityChange,
+    onSubtitleChange,
+    onToggleTheater,
+    onToggleFullscreen,
+    onToggleStreamMode,
+    onOpenEpisodes,
+    onOpenServers,
+    onSeekingChange,
+    onSeek,
+    onProgressKeyDown,
   } = props;
 
   const [showRemainingTime, setShowRemainingTime] = useState(false);
 
   // Huy hiệu hiển thị chất lượng: Auto, HD, FHD, 4K
-  const displayQualityBadge = qualityLevel >= 0 && qualities[qualityLevel]
-    ? qualities[qualityLevel].label.toUpperCase().replace("P", "")
-    : (quality || "HD");
+  const displayQualityBadge =
+    qualityLevel >= 0 && qualities[qualityLevel]
+      ? qualities[qualityLevel].label.toUpperCase().replace("P", "")
+      : quality || "HD";
 
   return (
     <>
@@ -317,4 +364,3 @@ export function PlayerControlsChrome(props: PlayerControlsChromeProps) {
     </>
   );
 }
-

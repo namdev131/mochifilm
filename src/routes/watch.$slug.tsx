@@ -198,7 +198,8 @@ function WatchPlayerPage() {
       const key = `${currentSource}:${movie.slug}:${srvIndex}:${epIndex}`;
       const existing = map[key];
       // Real duration from HTMLVideoElement if available; otherwise preserve existing duration, never fake it
-      const finalDur = dur > 0 ? dur : (typeof existing?.duration === "number" ? existing.duration : 0);
+      const finalDur =
+        dur > 0 ? dur : typeof existing?.duration === "number" ? existing.duration : 0;
 
       map[key] = {
         slug: movie.slug,
@@ -275,7 +276,6 @@ function WatchPlayerPage() {
     });
   };
 
-
   const currentSourceObj = SOURCES.find((s) => s.id === currentSource);
   const currentSourceName = currentSourceObj?.label || currentSource;
 
@@ -301,9 +301,7 @@ function WatchPlayerPage() {
       {/* Main Content Area */}
       <main className="app">
         {/* Topbar */}
-        <PlayerTopbar
-          onShowToast={triggerToast}
-        />
+        <PlayerTopbar onShowToast={triggerToast} />
 
         {isLoading ? (
           <div
@@ -352,8 +350,8 @@ function WatchPlayerPage() {
                 margin: "0 auto 20px",
               }}
             >
-              Máy chủ hiện tại có thể chưa cập nhật tựa phim này hoặc đường truyền đang bận.
-              Vui lòng thử lại sau.
+              Máy chủ hiện tại có thể chưa cập nhật tựa phim này hoặc đường truyền đang bận. Vui
+              lòng thử lại sau.
             </p>
             <button type="button" className="btn primary" onClick={() => refetch()}>
               ↻ Thử lại
@@ -381,7 +379,7 @@ function WatchPlayerPage() {
                   search: { source: currentSource, srv, ep },
                 });
                 triggerToast(
-                  `Chuyển sang ${movie.servers?.[srv]?.items?.[ep]?.name || `Tập ${ep + 1}`}`
+                  `Chuyển sang ${movie.servers?.[srv]?.items?.[ep]?.name || `Tập ${ep + 1}`}`,
                 );
               }}
               providerId={currentSource}
@@ -418,7 +416,7 @@ function WatchPlayerPage() {
                   search: { source: currentSource, srv, ep },
                 });
                 triggerToast(
-                  `Chuyển sang ${movie.servers?.[srv]?.items?.[ep]?.name || `Tập ${ep + 1}`}`
+                  `Chuyển sang ${movie.servers?.[srv]?.items?.[ep]?.name || `Tập ${ep + 1}`}`,
                 );
               }}
               providerId={currentSource}
@@ -443,8 +441,6 @@ function WatchPlayerPage() {
             />
           </>
         )}
-
-
       </main>
 
       {/* Mobile Navigation */}

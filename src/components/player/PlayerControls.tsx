@@ -2,8 +2,15 @@ import React, { useRef, useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import Hls from "hls.js";
 import {
-  Heart, Users, ListPlus, Download, Share2, Lightbulb, Flag,
-  Film, Server
+  Heart,
+  Users,
+  ListPlus,
+  Download,
+  Share2,
+  Lightbulb,
+  Flag,
+  Film,
+  Server,
 } from "lucide-react";
 import type { MovieDetail, EpisodeServerItem, EpisodeServer, SourceId } from "@/lib/types";
 import { PlayerControlsChrome } from "./PlayerControlsChrome";
@@ -106,7 +113,7 @@ export interface ResolvedStream {
 export function resolveStreamSource(
   activeEpisode: EpisodeServerItem | null,
   activeStreamUrl: string | null,
-  useEmbedFallback: boolean
+  useEmbedFallback: boolean,
 ): ResolvedStream {
   const epM3u8 = activeEpisode?.m3u8 || null;
   const epEmbed = activeEpisode?.embed || null;
@@ -263,16 +270,15 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
   useEffect(() => {
     const savedVolume = Number(localStorage.getItem("mochi-player-volume"));
     const savedSpeed = Number(localStorage.getItem("mochi-player-speed"));
-    if (Number.isFinite(savedVolume) && savedVolume >= 0 && savedVolume <= 1) setVolume(savedVolume);
-    if (Number.isFinite(savedSpeed) && savedSpeed >= 0.5 && savedSpeed <= 2) setPlaybackSpeed(String(savedSpeed));
+    if (Number.isFinite(savedVolume) && savedVolume >= 0 && savedVolume <= 1)
+      setVolume(savedVolume);
+    if (Number.isFinite(savedSpeed) && savedSpeed >= 0.5 && savedSpeed <= 2)
+      setPlaybackSpeed(String(savedSpeed));
   }, []);
 
   // Phân loại chính xác nguồn phát
-  const { streamType, activePlayUrl, fallbackEmbedUrl, isEmbed, hasHls, hasEmbed } = resolveStreamSource(
-    activeEpisode,
-    activeStreamUrl,
-    useEmbedFallback
-  );
+  const { streamType, activePlayUrl, fallbackEmbedUrl, isEmbed, hasHls, hasEmbed } =
+    resolveStreamSource(activeEpisode, activeStreamUrl, useEmbedFallback);
 
   const toggleStreamMode = () => {
     if (isEmbed) {
@@ -304,7 +310,12 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
     const video = videoRef.current;
 
     // Nếu là embed hoặc không có nguồn, hủy Hls instance và làm sạch video
-    if (streamType === "embed" || streamType === "none" || !activePlayUrl || typeof window === "undefined") {
+    if (
+      streamType === "embed" ||
+      streamType === "none" ||
+      !activePlayUrl ||
+      typeof window === "undefined"
+    ) {
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
@@ -350,11 +361,23 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
         hls.attachMedia(video);
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          setQualities(hls!.levels.map((item, level) => ({
-            level,
-            label: item.height ? `${item.height}p` : `${Math.round(item.bitrate / 1000)} kbps`,
-          })).filter((item, index, items) => items.findIndex((candidate) => candidate.label === item.label) === index));
-          setSubtitles(hls!.subtitleTracks.map((item, track) => ({ track, label: item.name || item.lang || `Phụ đề ${track + 1}` })));
+          setQualities(
+            hls!.levels
+              .map((item, level) => ({
+                level,
+                label: item.height ? `${item.height}p` : `${Math.round(item.bitrate / 1000)} kbps`,
+              }))
+              .filter(
+                (item, index, items) =>
+                  items.findIndex((candidate) => candidate.label === item.label) === index,
+              ),
+          );
+          setSubtitles(
+            hls!.subtitleTracks.map((item, track) => ({
+              track,
+              label: item.name || item.lang || `Phụ đề ${track + 1}`,
+            })),
+          );
           setQualityLevel(hls!.currentLevel);
           setSubtitleTrack(hls!.subtitleTrack);
           if (initialPosition && initialPosition > 5) {
@@ -452,7 +475,8 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
     if (!video) return;
     const cur = video.currentTime;
     setCurrentTime(cur);
-    const dur = video.duration && !isNaN(video.duration) && isFinite(video.duration) ? video.duration : 0;
+    const dur =
+      video.duration && !isNaN(video.duration) && isFinite(video.duration) ? video.duration : 0;
     if (dur > 0) {
       setDuration(dur);
     }
@@ -462,13 +486,16 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
   const handleProgress = () => {
     const video = videoRef.current;
     if (!video || !video.duration || !video.buffered.length) return setBufferedPercent(0);
-    setBufferedPercent(Math.min(100, (video.buffered.end(video.buffered.length - 1) / video.duration) * 100));
+    setBufferedPercent(
+      Math.min(100, (video.buffered.end(video.buffered.length - 1) / video.duration) * 100),
+    );
   };
 
   const handleLoadedMetadata = () => {
     const video = videoRef.current;
     if (!video) return;
-    const dur = video.duration && !isNaN(video.duration) && isFinite(video.duration) ? video.duration : 0;
+    const dur =
+      video.duration && !isNaN(video.duration) && isFinite(video.duration) ? video.duration : 0;
     if (dur > 0) {
       setDuration(dur);
     }
@@ -517,11 +544,12 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
     e.preventDefault();
     const video = videoRef.current;
     if (!video || !duration) return;
-    const targetTime = e.key === "Home"
-      ? 0
-      : e.key === "End"
-        ? duration
-        : Math.max(0, Math.min(duration, video.currentTime + (e.key === "ArrowLeft" ? -5 : 5)));
+    const targetTime =
+      e.key === "Home"
+        ? 0
+        : e.key === "End"
+          ? duration
+          : Math.max(0, Math.min(duration, video.currentTime + (e.key === "ArrowLeft" ? -5 : 5)));
     video.currentTime = targetTime;
     setCurrentTime(targetTime);
     onTimeProgress?.(targetTime, duration);
@@ -576,14 +604,21 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
     if (!hls) return onShowToast("Nguồn này không hỗ trợ đổi chất lượng");
     hls.currentLevel = level;
     setQualityLevel(level);
-    onShowToast(level === -1 ? "Chất lượng tự động" : `Chất lượng ${qualities.find((item) => item.level === level)?.label || "đã đổi"}`);
+    onShowToast(
+      level === -1
+        ? "Chất lượng tự động"
+        : `Chất lượng ${qualities.find((item) => item.level === level)?.label || "đã đổi"}`,
+    );
   };
 
   const setSubtitle = (track: number) => {
     const hls = hlsRef.current;
     if (hls) hls.subtitleTrack = track;
     const video = videoRef.current;
-    if (video) Array.from(video.textTracks).forEach((item, index) => { item.mode = index === track ? "showing" : "disabled"; });
+    if (video)
+      Array.from(video.textTracks).forEach((item, index) => {
+        item.mode = index === track ? "showing" : "disabled";
+      });
     setSubtitleTrack(track);
   };
 
@@ -621,7 +656,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
       doc.fullscreenElement ||
       doc.webkitFullscreenElement ||
       doc.mozFullScreenElement ||
-      doc.msFullscreenElement
+      doc.msFullscreenElement,
     );
 
     if (!isFull) {
@@ -711,7 +746,11 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
         navigator.share({ title: movie.name, url: shareUrl.toString() }).catch(() => {});
       } else {
         navigator.clipboard.writeText(shareUrl.toString());
-        onShowToast(curSec > 10 ? `Đã sao chép liên kết tại ${formatTime(curSec)}` : "Đã sao chép liên kết xem phim");
+        onShowToast(
+          curSec > 10
+            ? `Đã sao chép liên kết tại ${formatTime(curSec)}`
+            : "Đã sao chép liên kết xem phim",
+        );
       }
     } catch {
       onShowToast("Đã sao chép liên kết phim");
@@ -745,7 +784,10 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
       } else if (e.key === "ArrowRight" || key === "l") {
         e.preventDefault();
         if (videoRef.current && activePlayUrl && streamType !== "none") {
-          videoRef.current.currentTime = Math.min(videoRef.current.duration || Infinity, videoRef.current.currentTime + 10);
+          videoRef.current.currentTime = Math.min(
+            videoRef.current.duration || Infinity,
+            videoRef.current.currentTime + 10,
+          );
         }
       } else if (e.key === "ArrowLeft" || key === "j") {
         e.preventDefault();
@@ -828,7 +870,11 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
               style={{ width: "100%", height: "100%", border: "none" }}
             />
             <video id="video" style={{ display: "none" }}>
-              <source id="videoSource" src={activePlayUrl || fallbackEmbedUrl || ""} type="video/mp4" />
+              <source
+                id="videoSource"
+                src={activePlayUrl || fallbackEmbedUrl || ""}
+                type="video/mp4"
+              />
             </video>
           </>
         ) : (
@@ -1022,11 +1068,13 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
             <span className="tag">{movie.lang || "Phụ đề Việt"}</span>
             {servers && servers[activeServerIndex] && (
               <span className="tag active-server-tag">
-                {detectServerLang(servers[activeServerIndex].server_name || "", movie.lang) === "thuyetminh"
+                {detectServerLang(servers[activeServerIndex].server_name || "", movie.lang) ===
+                "thuyetminh"
                   ? "🎙️ Thuyết Minh"
-                  : detectServerLang(servers[activeServerIndex].server_name || "", movie.lang) === "longtieng"
-                  ? "🗣️ Lồng Tiếng"
-                  : "🇻🇳 Vietsub"}
+                  : detectServerLang(servers[activeServerIndex].server_name || "", movie.lang) ===
+                      "longtieng"
+                    ? "🗣️ Lồng Tiếng"
+                    : "🇻🇳 Vietsub"}
                 {" · "}
                 {servers[activeServerIndex].server_name || `Máy chủ ${activeServerIndex + 1}`}
               </span>
@@ -1048,18 +1096,15 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                     lang === "thuyetminh"
                       ? "🎙️ Thuyết Minh"
                       : lang === "longtieng"
-                      ? "🗣️ Lồng Tiếng"
-                      : "🇻🇳 Vietsub";
+                        ? "🗣️ Lồng Tiếng"
+                        : "🇻🇳 Vietsub";
                   return (
                     <button
                       key={sIdx}
                       type="button"
                       className={`quick-server-btn ${isServerActive ? "active" : ""}`}
                       onClick={() => {
-                        const targetEp = Math.min(
-                          activeEpisodeIndex,
-                          (srv.items?.length || 1) - 1
-                        );
+                        const targetEp = Math.min(activeEpisodeIndex, (srv.items?.length || 1) - 1);
                         onSelectEpisode?.(sIdx, Math.max(0, targetEp));
                         onShowToast(`Đã chuyển sang ${srv.server_name || `Máy chủ ${sIdx + 1}`}`);
                       }}
@@ -1177,4 +1222,3 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
     </section>
   );
 };
-

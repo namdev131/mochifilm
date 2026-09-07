@@ -68,7 +68,7 @@ import {
   mergeMovies,
   sortByNewest,
 } from "../lib/api";
-
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 export interface HomeSearchParams {
   nav?: string;
@@ -225,13 +225,20 @@ async function fetchCategoryMoviesFromApi(
           const thumb = m.thumb_url?.startsWith("http")
             ? m.thumb_url
             : `${cdn}/${m.thumb_url || ""}`;
-          const categoryList = (m.category || []).map((c: any) => (typeof c === "string" ? c : c.name || c.slug));
-          const countryList = (m.country || []).map((c: any) => (typeof c === "string" ? c : c.name || c.slug));
+          const categoryList = (m.category || []).map((c: any) =>
+            typeof c === "string" ? c : c.name || c.slug,
+          );
+          const countryList = (m.country || []).map((c: any) =>
+            typeof c === "string" ? c : c.name || c.slug,
+          );
           const isCinema = Boolean(
             m.chieurap === true ||
             m.chieu_rap === true ||
             slug === "phim-chieu-rap" ||
-            categoryList.some((c: string) => c.toLowerCase().includes("chiếu rạp") || c.toLowerCase().includes("chieu rap"))
+            categoryList.some(
+              (c: string) =>
+                c.toLowerCase().includes("chiếu rạp") || c.toLowerCase().includes("chieu rap"),
+            ),
           );
           const itemType =
             m.type ||
@@ -372,7 +379,10 @@ export function HomePage() {
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
 
   const currentUser = user
-    ? { email: user.email, name: user.user_metadata.full_name || user.email?.split("@")[0] || "Thành viên Mochi" }
+    ? {
+        email: user.email,
+        name: user.user_metadata.full_name || user.email?.split("@")[0] || "Thành viên Mochi",
+      }
     : null;
 
   // Real Hero Detail from API
@@ -383,13 +393,11 @@ export function HomePage() {
   } | null>(null);
 
   // Search state
-  const [searchQuery, setSearchQuery] = useState<string>(
-    () => searchParams.q || ""
-  );
+  const [searchQuery, setSearchQuery] = useState<string>(() => searchParams.q || "");
   const [searchResults, setSearchResults] = useState<MovieCard[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [showSearchDropdown, setShowSearchDropdown] = useState(
-    () => Boolean(searchParams.q && searchParams.q.trim().length > 0)
+  const [showSearchDropdown, setShowSearchDropdown] = useState(() =>
+    Boolean(searchParams.q && searchParams.q.trim().length > 0),
   );
 
   // Lắng nghe và đồng bộ khi URL query params thay đổi (hỗ trợ refresh & back/forward của trình duyệt)
@@ -400,7 +408,10 @@ export function HomePage() {
     const currentSource = searchParams.source || "all";
     const currentQ = searchParams.q || "";
 
-    if (currentSource && (currentSource === "all" || currentSource === "kkphim" || currentSource === "nguonc")) {
+    if (
+      currentSource &&
+      (currentSource === "all" || currentSource === "kkphim" || currentSource === "nguonc")
+    ) {
       setSelectedSource(currentSource);
     } else if (!currentSource) {
       setSelectedSource("all");
@@ -444,7 +455,7 @@ export function HomePage() {
             q: trimmedQ || undefined,
           }),
           replace: true,
-        }).catch(() => { });
+        }).catch(() => {});
 
         if (typeof window !== "undefined") {
           const params = new URLSearchParams(window.location.search);
@@ -454,7 +465,9 @@ export function HomePage() {
             params.delete("q");
           }
           const queryString = params.toString();
-          const newPath = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+          const newPath = queryString
+            ? `${window.location.pathname}?${queryString}`
+            : window.location.pathname;
           if (`${window.location.pathname}${window.location.search}` !== newPath) {
             window.history.replaceState(window.history.state, "", newPath);
           }
@@ -549,7 +562,8 @@ export function HomePage() {
 
     // 1. Load Real Favorites (Strictly real stored data)
     try {
-      const rawFav = localStorage.getItem("mochi_favorites") || localStorage.getItem("lv-favorites");
+      const rawFav =
+        localStorage.getItem("mochi_favorites") || localStorage.getItem("lv-favorites");
       if (rawFav) {
         const parsed = JSON.parse(rawFav);
         if (Array.isArray(parsed)) {
@@ -570,12 +584,20 @@ export function HomePage() {
         const pos = row.positionSeconds;
         const dur = row.durationSeconds || 1;
         return {
-          slug: row.slug, name: row.name, thumb: row.poster || "", poster: row.poster || "",
+          slug: row.slug,
+          name: row.name,
+          thumb: row.poster || "",
+          poster: row.poster || "",
           episode_name: row.episodeName || `Tập ${row.epIndex + 1}`,
           progressPercent: Math.min(100, Math.round((pos / dur) * 100)),
-          durationLeft: dur > pos ? `Còn ${Math.max(1, Math.round((dur - pos) / 60))} phút` : "Đã xong",
-          source: row.source as SourceId, positionSeconds: pos, durationSeconds: dur,
-          epIndex: row.epIndex, srvIndex: row.srvIndex, updatedAt: row.watchedAt,
+          durationLeft:
+            dur > pos ? `Còn ${Math.max(1, Math.round((dur - pos) / 60))} phút` : "Đã xong",
+          source: row.source as SourceId,
+          positionSeconds: pos,
+          durationSeconds: dur,
+          epIndex: row.epIndex,
+          srvIndex: row.srvIndex,
+          updatedAt: row.watchedAt,
         };
       });
     }
@@ -678,30 +700,159 @@ export function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
+  // -------------------------------------------------------------
+  // Supabase Realtime Subscription & cleanup
+  // -------------------------------------------------------------
   useEffect(() => {
-    const rows = convexNotifications ?? [];
-    setRealNotifications(
-      rows.map((row) => ({
-        id: row._id,
-        title: row.title,
-        body: row.body ?? null,
-        slug: row.slug ?? null,
-        source: row.source ?? null,
-        poster: row.poster ?? null,
-        read: row.read,
-        created_at: new Date(row.createdAt).toISOString(),
-      })),
-    );
-    setUnreadNotificationCount(rows.filter((row) => !row.read).length);
-  }, [convexNotifications]);
+    if (typeof window === "undefined") return;
+
+    const channel = supabase
+      .channel("watch_history_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "watch_history" }, () => {
+        reloadRealUserData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // -------------------------------------------------------------
+  // Realtime User Notifications (Supabase postgres_changes)
+  // -------------------------------------------------------------
+  const loadUserNotifications = async (userId: string) => {
+    if (!isSupabaseConfigured) {
+      setRealNotifications([]);
+      setUnreadNotificationCount(0);
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id,title,body,slug,source,poster,read,created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (!error && data && data.length > 0) {
+        setRealNotifications(data as RealNotification[]);
+        setUnreadNotificationCount(data.filter((n: any) => !n.read).length);
+      } else if (convexNotifications && convexNotifications.length > 0) {
+        const rows = convexNotifications;
+        setRealNotifications(
+          rows.map((row) => ({
+            id: row._id,
+            title: row.title,
+            body: row.body ?? null,
+            slug: row.slug ?? null,
+            source: row.source ?? null,
+            poster: row.poster ?? null,
+            read: row.read,
+            created_at: new Date(row.createdAt).toISOString(),
+          })),
+        );
+        setUnreadNotificationCount(rows.filter((row) => !row.read).length);
+      } else {
+        setRealNotifications([]);
+        setUnreadNotificationCount(0);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let activeNotifChannel: ReturnType<typeof supabase.channel> | null = null;
+
+    const uid = user?.id;
+    if (uid) {
+      loadUserNotifications(uid);
+      activeNotifChannel = supabase
+        .channel(`user_notifs_${uid}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${uid}`,
+          },
+          () => {
+            loadUserNotifications(uid);
+          },
+        )
+        .subscribe();
+    } else {
+      setRealNotifications([]);
+      setUnreadNotificationCount(0);
+    }
+
+    return () => {
+      if (activeNotifChannel) {
+        supabase.removeChannel(activeNotifChannel);
+      }
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (convexNotifications && convexNotifications.length > 0 && realNotifications.length === 0) {
+      const rows = convexNotifications;
+      setRealNotifications(
+        rows.map((row) => ({
+          id: row._id,
+          title: row.title,
+          body: row.body ?? null,
+          slug: row.slug ?? null,
+          source: row.source ?? null,
+          poster: row.poster ?? null,
+          read: row.read,
+          created_at: new Date(row.createdAt).toISOString(),
+        })),
+      );
+      setUnreadNotificationCount(rows.filter((row) => !row.read).length);
+    }
+  }, [convexNotifications, realNotifications.length]);
 
   const markNotificationRead = async (notif: RealNotification) => {
     if (!user || notif.read) return;
-    await markRead({ id: notif.id as never });
+    try {
+      await supabase
+        .from("notifications")
+        .update({ read: true } as never)
+        .eq("id", notif.id);
+      setRealNotifications((prev) =>
+        prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)),
+      );
+      setUnreadNotificationCount((c) => Math.max(0, c - 1));
+    } catch {
+      // ignore
+    }
+    try {
+      await markRead({ id: notif.id as never });
+    } catch {
+      // ignore
+    }
   };
 
   const markAllNotificationsRead = async () => {
-    if (user) await markAllRead();
+    if (!user) return;
+    try {
+      await supabase
+        .from("notifications")
+        .update({ read: true } as never)
+        .eq("user_id", user.id);
+      setRealNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadNotificationCount(0);
+    } catch {
+      // ignore
+    }
+    try {
+      await markAllRead();
+    } catch {
+      // ignore
+    }
   };
 
   // Ping sources for latency health
@@ -755,7 +906,10 @@ export function HomePage() {
       if (countryDropdownRef.current && !countryDropdownRef.current.contains(e.target as Node)) {
         setShowCountryDropdown(false);
       }
-      if (notificationDropdownRef.current && !notificationDropdownRef.current.contains(e.target as Node)) {
+      if (
+        notificationDropdownRef.current &&
+        !notificationDropdownRef.current.contains(e.target as Node)
+      ) {
         setShowNotifications(false);
       }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
@@ -1040,7 +1194,9 @@ export function HomePage() {
   }, [latestMovies]);
 
   const currentHero = currentHeroList[activeHeroIndex] || currentHeroList[0] || null;
-  const isCurrentHeroFavorite = currentHero ? favorites.some((f) => f.slug === currentHero.slug) : false;
+  const isCurrentHeroFavorite = currentHero
+    ? favorites.some((f) => f.slug === currentHero.slug)
+    : false;
 
   // Real Hero Detail enrichment via API
   useEffect(() => {
@@ -1094,7 +1250,12 @@ export function HomePage() {
   } = useQuery<MovieCard[]>({
     queryKey: ["genreQuery", selectedGenre, selectedSource],
     queryFn: () =>
-      fetchCategoryMoviesFromApi("the-loai", toApiSlug(selectedGenre), selectedGenre, selectedSource),
+      fetchCategoryMoviesFromApi(
+        "the-loai",
+        toApiSlug(selectedGenre),
+        selectedGenre,
+        selectedSource,
+      ),
     enabled: selectedGenre !== "Tất cả",
     staleTime: 1000 * 60 * 5,
   });
@@ -1108,7 +1269,12 @@ export function HomePage() {
   } = useQuery<MovieCard[]>({
     queryKey: ["countryQuery", selectedCountry, selectedSource],
     queryFn: () =>
-      fetchCategoryMoviesFromApi("quoc-gia", toApiSlug(selectedCountry || ""), selectedCountry || "", selectedSource),
+      fetchCategoryMoviesFromApi(
+        "quoc-gia",
+        toApiSlug(selectedCountry || ""),
+        selectedCountry || "",
+        selectedSource,
+      ),
     enabled: Boolean(selectedCountry),
     staleTime: 1000 * 60 * 5,
   });
@@ -1140,7 +1306,12 @@ export function HomePage() {
     queryKey: ["navCategoryQuery", selectedNav, navCategoryConfig?.slug, selectedSource],
     queryFn: () =>
       navCategoryConfig
-        ? fetchCategoryMoviesFromApi("danh-sach", navCategoryConfig.slug, navCategoryConfig.keyword, selectedSource)
+        ? fetchCategoryMoviesFromApi(
+            "danh-sach",
+            navCategoryConfig.slug,
+            navCategoryConfig.keyword,
+            selectedSource,
+          )
         : Promise.resolve(EMPTY_MOVIES),
     enabled: Boolean(navCategoryConfig) && selectedGenre === "Tất cả" && !selectedCountry,
     staleTime: 1000 * 60 * 5,
@@ -1244,7 +1415,9 @@ export function HomePage() {
         return latestMovies.filter((m) => {
           const catList = (m as any).category;
           if (catList && Array.isArray(catList)) {
-            return catList.some((c: string) => c.toLowerCase().includes(selectedGenre.toLowerCase()));
+            return catList.some((c: string) =>
+              c.toLowerCase().includes(selectedGenre.toLowerCase()),
+            );
           }
           return (
             (m.name && m.name.toLowerCase().includes(selectedGenre.toLowerCase())) ||
@@ -1269,10 +1442,14 @@ export function HomePage() {
         const isSeries = (m: MovieCard) => {
           if (m.type === "series") return true;
           if (m.type === "single" || m.type === "hoathinh") return false;
-          if (m.category && m.category.some((c) => {
-            const lc = c.toLowerCase();
-            return lc.includes("phim bộ") || lc === "phim-bo";
-          })) return true;
+          if (
+            m.category &&
+            m.category.some((c) => {
+              const lc = c.toLowerCase();
+              return lc.includes("phim bộ") || lc === "phim-bo";
+            })
+          )
+            return true;
           return Boolean(m.episode_current && m.episode_current.includes("Tập"));
         };
         const inLatest = latestMovies.filter(isSeries);
@@ -1288,13 +1465,18 @@ export function HomePage() {
         const isSingle = (m: MovieCard) => {
           if (m.type === "single") return true;
           if (m.type === "series" || m.type === "hoathinh") return false;
-          if (m.category && m.category.some((c) => {
-            const lc = c.toLowerCase();
-            return lc.includes("phim lẻ") || lc === "phim-le";
-          })) return true;
+          if (
+            m.category &&
+            m.category.some((c) => {
+              const lc = c.toLowerCase();
+              return lc.includes("phim lẻ") || lc === "phim-le";
+            })
+          )
+            return true;
           return Boolean(
             m.quality?.includes("Bản Rạp") ||
-            (m.episode_current && (m.episode_current.includes("Full") || m.episode_current.includes("Hoàn tất")))
+            (m.episode_current &&
+              (m.episode_current.includes("Full") || m.episode_current.includes("Hoàn tất"))),
           );
         };
         const inLatest = latestMovies.filter(isSingle);
@@ -1309,10 +1491,14 @@ export function HomePage() {
         if (isNavError && navQueryMovies.length === 0) return EMPTY_MOVIES;
         const isAnime = (m: MovieCard) => {
           if (m.type === "hoathinh") return true;
-          if (m.category && m.category.some((c) => {
-            const lc = c.toLowerCase();
-            return lc.includes("hoạt hình") || lc.includes("anime") || lc === "hoat-hinh";
-          })) return true;
+          if (
+            m.category &&
+            m.category.some((c) => {
+              const lc = c.toLowerCase();
+              return lc.includes("hoạt hình") || lc.includes("anime") || lc === "hoat-hinh";
+            })
+          )
+            return true;
           return false;
         };
         const inLatest = latestMovies.filter(isAnime);
@@ -1327,11 +1513,21 @@ export function HomePage() {
         if (isNavError && navQueryMovies.length === 0) return EMPTY_MOVIES;
         const isCinema = (m: MovieCard) => {
           if (m.chieu_rap === true) return true;
-          if (m.category && m.category.some((c) => {
-            const lc = c.toLowerCase();
-            return lc.includes("chiếu rạp") || lc.includes("chieu rap") || lc === "phim-chieu-rap";
-          })) return true;
-          if (m.quality && (m.quality.toLowerCase().includes("rạp") || m.quality.toLowerCase().includes("cam"))) return true;
+          if (
+            m.category &&
+            m.category.some((c) => {
+              const lc = c.toLowerCase();
+              return (
+                lc.includes("chiếu rạp") || lc.includes("chieu rap") || lc === "phim-chieu-rap"
+              );
+            })
+          )
+            return true;
+          if (
+            m.quality &&
+            (m.quality.toLowerCase().includes("rạp") || m.quality.toLowerCase().includes("cam"))
+          )
+            return true;
           return false;
         };
         const inLatest = latestMovies.filter(isCinema);
@@ -1467,7 +1663,7 @@ export function HomePage() {
         source: newSource !== "all" ? newSource : undefined,
       }),
       replace: false,
-    }).catch(() => { });
+    }).catch(() => {});
 
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -1477,7 +1673,9 @@ export function HomePage() {
         params.set("source", newSource);
       }
       const queryString = params.toString();
-      const newPath = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+      const newPath = queryString
+        ? `${window.location.pathname}?${queryString}`
+        : window.location.pathname;
       if (`${window.location.pathname}${window.location.search}` !== newPath) {
         window.history.pushState(window.history.state, "", newPath);
       }
@@ -1488,7 +1686,7 @@ export function HomePage() {
     nav: string,
     genre = "Tất cả",
     country: string | null = null,
-    shouldPushHistory = true
+    shouldPushHistory = true,
   ) => {
     // 1. Đóng menu mobile và tất cả dropdowns
     setIsSidebarOpenMobile(false);
@@ -1545,7 +1743,7 @@ export function HomePage() {
       navigate({
         search: nextSearch,
         replace: false,
-      }).catch(() => { });
+      }).catch(() => {});
 
       if (typeof window !== "undefined") {
         const params = new URLSearchParams();
@@ -1570,10 +1768,16 @@ export function HomePage() {
         }
 
         const queryString = params.toString();
-        const newPath = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+        const newPath = queryString
+          ? `${window.location.pathname}?${queryString}`
+          : window.location.pathname;
 
         if (`${window.location.pathname}${window.location.search}` !== newPath) {
-          window.history.pushState({ nav, genre, country, source: selectedSource, q: nextSearch.q }, "", newPath);
+          window.history.pushState(
+            { nav, genre, country, source: selectedSource, q: nextSearch.q },
+            "",
+            newPath,
+          );
         }
       }
     }
@@ -1591,7 +1795,10 @@ export function HomePage() {
       const sourceParam = params.get("source") as SourceFilter | null;
       const qParam = params.get("q");
 
-      if (sourceParam && (sourceParam === "all" || sourceParam === "kkphim" || sourceParam === "nguonc")) {
+      if (
+        sourceParam &&
+        (sourceParam === "all" || sourceParam === "kkphim" || sourceParam === "nguonc")
+      ) {
         setSelectedSource(sourceParam);
       }
 
@@ -1645,8 +1852,9 @@ export function HomePage() {
       {/* SIDEBAR TRÁI 268px                                            */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-[268px] min-w-[268px] max-w-[268px] flex flex-col justify-between bg-[#0e0e14]/95 backdrop-blur-2xl border-r border-white/[0.06] transition-transform duration-300 ease-in-out ${isSidebarOpenMobile ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }`}
+        className={`fixed top-0 bottom-0 left-0 z-50 w-[268px] min-w-[268px] max-w-[268px] flex flex-col justify-between bg-[#0e0e14]/95 backdrop-blur-2xl border-r border-white/[0.06] transition-transform duration-300 ease-in-out ${
+          isSidebarOpenMobile ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
       >
         {/* Logo */}
         {/* Logo Wordmark Chính Thức */}
@@ -1697,16 +1905,18 @@ export function HomePage() {
                 onClick={() => {
                   navigateToCategory("trang-chu");
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${selectedNav === "trang-chu" && selectedGenre === "Tất cả" && !selectedCountry
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${
+                  selectedNav === "trang-chu" && selectedGenre === "Tất cả" && !selectedCountry
                     ? "text-white bg-gradient-to-r from-pink-500/20 via-pink-500/10 to-transparent border-l-[3px] border-pink-500 shadow-sm font-bold"
                     : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                  }`}
+                }`}
               >
                 <Compass
-                  className={`w-4 h-4 transition duration-200 ${selectedNav === "trang-chu" && selectedGenre === "Tất cả" && !selectedCountry
+                  className={`w-4 h-4 transition duration-200 ${
+                    selectedNav === "trang-chu" && selectedGenre === "Tất cả" && !selectedCountry
                       ? "text-pink-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]"
                       : "text-zinc-400 group-hover:text-pink-400"
-                    }`}
+                  }`}
                 />
                 <span>Trang chủ</span>
                 {selectedNav === "trang-chu" && selectedGenre === "Tất cả" && !selectedCountry && (
@@ -1719,16 +1929,18 @@ export function HomePage() {
                 onClick={() => {
                   navigateToCategory("phim-moi");
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${selectedNav === "phim-moi"
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${
+                  selectedNav === "phim-moi"
                     ? "text-white bg-gradient-to-r from-pink-500/20 via-pink-500/10 to-transparent border-l-[3px] border-pink-500 shadow-sm font-bold"
                     : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                  }`}
+                }`}
               >
                 <Flame
-                  className={`w-4 h-4 transition duration-200 ${selectedNav === "phim-moi"
+                  className={`w-4 h-4 transition duration-200 ${
+                    selectedNav === "phim-moi"
                       ? "text-pink-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]"
                       : "text-zinc-400 group-hover:text-pink-400"
-                    }`}
+                  }`}
                 />
                 <span>Phim mới</span>
                 {selectedNav === "phim-moi" && (
@@ -1741,16 +1953,18 @@ export function HomePage() {
                 onClick={() => {
                   navigateToCategory("phim-le");
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${selectedNav === "phim-le"
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${
+                  selectedNav === "phim-le"
                     ? "text-white bg-gradient-to-r from-pink-500/20 via-pink-500/10 to-transparent border-l-[3px] border-pink-500 shadow-sm font-bold"
                     : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                  }`}
+                }`}
               >
                 <Film
-                  className={`w-4 h-4 transition duration-200 ${selectedNav === "phim-le"
+                  className={`w-4 h-4 transition duration-200 ${
+                    selectedNav === "phim-le"
                       ? "text-pink-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]"
                       : "text-zinc-400 group-hover:text-pink-400"
-                    }`}
+                  }`}
                 />
                 <span>Phim lẻ</span>
                 {selectedNav === "phim-le" && (
@@ -1763,16 +1977,18 @@ export function HomePage() {
                 onClick={() => {
                   navigateToCategory("phim-bo");
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${selectedNav === "phim-bo"
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${
+                  selectedNav === "phim-bo"
                     ? "text-white bg-gradient-to-r from-pink-500/20 via-pink-500/10 to-transparent border-l-[3px] border-pink-500 shadow-sm font-bold"
                     : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                  }`}
+                }`}
               >
                 <Tv
-                  className={`w-4 h-4 transition duration-200 ${selectedNav === "phim-bo"
+                  className={`w-4 h-4 transition duration-200 ${
+                    selectedNav === "phim-bo"
                       ? "text-pink-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]"
                       : "text-zinc-400 group-hover:text-pink-400"
-                    }`}
+                  }`}
                 />
                 <span>Phim bộ</span>
                 {selectedNav === "phim-bo" && (
@@ -1785,16 +2001,18 @@ export function HomePage() {
                 onClick={() => {
                   navigateToCategory("chieu-rap");
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${selectedNav === "chieu-rap"
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${
+                  selectedNav === "chieu-rap"
                     ? "text-white bg-gradient-to-r from-pink-500/20 via-pink-500/10 to-transparent border-l-[3px] border-pink-500 shadow-sm font-bold"
                     : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                  }`}
+                }`}
               >
                 <Clapperboard
-                  className={`w-4 h-4 transition duration-200 ${selectedNav === "chieu-rap"
+                  className={`w-4 h-4 transition duration-200 ${
+                    selectedNav === "chieu-rap"
                       ? "text-pink-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]"
                       : "text-zinc-400 group-hover:text-pink-400"
-                    }`}
+                  }`}
                 />
                 <span>Chiếu rạp</span>
                 {selectedNav === "chieu-rap" && (
@@ -1807,16 +2025,18 @@ export function HomePage() {
                 onClick={() => {
                   navigateToCategory("hoat-hinh");
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${selectedNav === "hoat-hinh"
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer ${
+                  selectedNav === "hoat-hinh"
                     ? "text-white bg-gradient-to-r from-pink-500/20 via-pink-500/10 to-transparent border-l-[3px] border-pink-500 shadow-sm font-bold"
                     : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                  }`}
+                }`}
               >
                 <Sparkles
-                  className={`w-4 h-4 transition duration-200 ${selectedNav === "hoat-hinh"
+                  className={`w-4 h-4 transition duration-200 ${
+                    selectedNav === "hoat-hinh"
                       ? "text-pink-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]"
                       : "text-zinc-400 group-hover:text-pink-400"
-                    }`}
+                  }`}
                 />
                 <span>Hoạt hình</span>
                 {selectedNav === "hoat-hinh" && (
@@ -1844,17 +2064,21 @@ export function HomePage() {
                       setShowCountryDropdown(false);
                     }
                   }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 ${showGenreDropdown || selectedGenre !== "Tất cả" || selectedNav === "the-loai"
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 ${
+                    showGenreDropdown || selectedGenre !== "Tất cả" || selectedNav === "the-loai"
                       ? "text-white bg-gradient-to-r from-pink-500/20 via-pink-500/10 to-transparent border-l-[3px] border-pink-500 shadow-sm font-bold"
                       : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Layers
-                      className={`w-4 h-4 transition duration-200 shrink-0 ${showGenreDropdown || selectedGenre !== "Tất cả" || selectedNav === "the-loai"
+                      className={`w-4 h-4 transition duration-200 shrink-0 ${
+                        showGenreDropdown ||
+                        selectedGenre !== "Tất cả" ||
+                        selectedNav === "the-loai"
                           ? "text-pink-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]"
                           : "text-zinc-400 group-hover:text-pink-400"
-                        }`}
+                      }`}
                     />
                     <span className="truncate">
                       {selectedGenre !== "Tất cả" ? selectedGenre : "Thể loại"}
@@ -1912,10 +2136,11 @@ export function HomePage() {
                             onClick={() => {
                               navigateToCategory("the-loai", g.name);
                             }}
-                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-left transition cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 ${isSelected
+                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-left transition cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 ${
+                              isSelected
                                 ? "bg-rose-500/15 text-rose-300 font-semibold border border-rose-500/30"
                                 : "text-zinc-300 hover:text-white hover:bg-white/[0.06]"
-                              }`}
+                            }`}
                           >
                             <Icon className="w-3.5 h-3.5 text-rose-400 group-hover:text-rose-300 group-hover:scale-110 transition-transform shrink-0" />
                             <span className="text-xs truncate">{g.name}</span>
@@ -1947,17 +2172,21 @@ export function HomePage() {
                       setShowGenreDropdown(false);
                     }
                   }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 ${showCountryDropdown || Boolean(selectedCountry) || selectedNav === "quoc-gia"
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 ${
+                    showCountryDropdown || Boolean(selectedCountry) || selectedNav === "quoc-gia"
                       ? "text-white bg-gradient-to-r from-pink-500/20 via-pink-500/10 to-transparent border-l-[3px] border-pink-500 shadow-sm font-bold"
                       : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Globe
-                      className={`w-4 h-4 transition duration-200 shrink-0 ${showCountryDropdown || Boolean(selectedCountry) || selectedNav === "quoc-gia"
+                      className={`w-4 h-4 transition duration-200 shrink-0 ${
+                        showCountryDropdown ||
+                        Boolean(selectedCountry) ||
+                        selectedNav === "quoc-gia"
                           ? "text-pink-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]"
                           : "text-zinc-400 group-hover:text-pink-400"
-                        }`}
+                      }`}
                     />
                     <span className="truncate">
                       {selectedCountry ? selectedCountry : "Quốc gia"}
@@ -2014,20 +2243,27 @@ export function HomePage() {
                             onClick={() => {
                               navigateToCategory("quoc-gia", "Tất cả", c.name);
                             }}
-                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-left transition cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 ${isSelected
+                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-left transition cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 ${
+                              isSelected
                                 ? "bg-rose-500/15 text-rose-300 font-semibold border border-rose-500/30"
                                 : "text-zinc-300 hover:text-white hover:bg-white/[0.06]"
-                              }`}
+                            }`}
                           >
                             <span
-                              className={`text-xs font-bold tracking-wider w-6 shrink-0 ${isSelected ? "text-rose-400" : "text-zinc-400 group-hover:text-zinc-200"
-                                }`}
+                              className={`text-xs font-bold tracking-wider w-6 shrink-0 ${
+                                isSelected
+                                  ? "text-rose-400"
+                                  : "text-zinc-400 group-hover:text-zinc-200"
+                              }`}
                             >
                               {c.code}
                             </span>
                             <span
-                              className={`text-xs truncate ${isSelected ? "text-rose-200 font-semibold" : "text-zinc-200 group-hover:text-white"
-                                }`}
+                              className={`text-xs truncate ${
+                                isSelected
+                                  ? "text-rose-200 font-semibold"
+                                  : "text-zinc-200 group-hover:text-white"
+                              }`}
                             >
                               {c.name}
                             </span>
@@ -2051,15 +2287,19 @@ export function HomePage() {
                 onClick={() => {
                   navigateToCategory("yeu-thich");
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition duration-200 group ${selectedNav === "yeu-thich"
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition duration-200 group ${
+                  selectedNav === "yeu-thich"
                     ? "text-white bg-gradient-to-r from-pink-500/20 to-transparent border-l-[3px] border-pink-500"
                     : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                  }`}
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <Heart
-                    className={`w-4 h-4 ${selectedNav === "yeu-thich" ? "text-pink-400" : "text-zinc-400 group-hover:text-pink-400"
-                      }`}
+                    className={`w-4 h-4 ${
+                      selectedNav === "yeu-thich"
+                        ? "text-pink-400"
+                        : "text-zinc-400 group-hover:text-pink-400"
+                    }`}
                   />
                   <span>Yêu thích</span>
                 </div>
@@ -2074,15 +2314,19 @@ export function HomePage() {
                 onClick={() => {
                   navigateToCategory("lich-su");
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition duration-200 group ${selectedNav === "lich-su"
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition duration-200 group ${
+                  selectedNav === "lich-su"
                     ? "text-white bg-gradient-to-r from-pink-500/20 to-transparent border-l-[3px] border-pink-500"
                     : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                  }`}
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <Clock
-                    className={`w-4 h-4 ${selectedNav === "lich-su" ? "text-pink-400" : "text-zinc-400 group-hover:text-pink-400"
-                      }`}
+                    className={`w-4 h-4 ${
+                      selectedNav === "lich-su"
+                        ? "text-pink-400"
+                        : "text-zinc-400 group-hover:text-pink-400"
+                    }`}
                   />
                   <span>Lịch sử xem</span>
                 </div>
@@ -2156,7 +2400,6 @@ export function HomePage() {
             </div>
           </div>
         </div>
-
       </aside>
       {/* Mobile Sidebar Backdrop */}
       {isSidebarOpenMobile && (
@@ -2204,7 +2447,7 @@ export function HomePage() {
                           q: trimmedQ || undefined,
                         }),
                         replace: false,
-                      }).catch(() => { });
+                      }).catch(() => {});
                     }
                   }}
                   onFocus={() => setShowSearchDropdown(true)}
@@ -2221,7 +2464,7 @@ export function HomePage() {
                           q: undefined,
                         }),
                         replace: false,
-                      }).catch(() => { });
+                      }).catch(() => {});
                     }}
                     className="absolute right-3.5 p-0.5 rounded-full text-zinc-400 hover:text-zinc-200 cursor-pointer"
                   >
@@ -2296,7 +2539,13 @@ export function HomePage() {
                               navigate({
                                 to: "/watch/$slug",
                                 params: { slug: item.slug },
-                                search: { source: item.source || (selectedSource !== "all" ? (selectedSource as SourceId) : "kkphim") },
+                                search: {
+                                  source:
+                                    item.source ||
+                                    (selectedSource !== "all"
+                                      ? (selectedSource as SourceId)
+                                      : "kkphim"),
+                                },
                               });
                             }}
                             className="w-8 h-8 rounded-lg bg-pink-500/15 hover:bg-pink-500 text-pink-400 hover:text-white flex items-center justify-center shrink-0 transition"
@@ -2309,7 +2558,9 @@ export function HomePage() {
                       ))
                     ) : (
                       <div className="py-6 text-center text-xs text-zinc-400">
-                        {isSearching ? "Đang quét các máy chủ phim..." : "Không tìm thấy phim phù hợp"}
+                        {isSearching
+                          ? "Đang quét các máy chủ phim..."
+                          : "Không tìm thấy phim phù hợp"}
                       </div>
                     )}
                   </div>
@@ -2327,7 +2578,7 @@ export function HomePage() {
                             q: trimmedQ || undefined,
                           }),
                           replace: false,
-                        }).catch(() => { });
+                        }).catch(() => {});
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
@@ -2339,7 +2590,7 @@ export function HomePage() {
                               q: trimmedQ || undefined,
                             }),
                             replace: false,
-                          }).catch(() => { });
+                          }).catch(() => {});
                         }
                       }}
                       className="px-3 py-2 text-center text-xs font-semibold text-pink-400 hover:text-pink-300 hover:bg-white/[0.04] border-t border-white/[0.04] cursor-pointer transition"
@@ -2371,7 +2622,11 @@ export function HomePage() {
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2.5 rounded-xl bg-[#13131b] hover:bg-[#181822] border border-white/[0.08] text-zinc-300 hover:text-white transition cursor-pointer"
-                aria-label={unreadNotificationCount > 0 ? `Thông báo (${unreadNotificationCount} chưa đọc)` : "Thông báo"}
+                aria-label={
+                  unreadNotificationCount > 0
+                    ? `Thông báo (${unreadNotificationCount} chưa đọc)`
+                    : "Thông báo"
+                }
               >
                 <Bell className="w-4 h-4" />
                 {unreadNotificationCount > 0 && (
@@ -2405,12 +2660,13 @@ export function HomePage() {
                   </div>
 
                   <div className="max-h-80 overflow-y-auto p-2 space-y-1">
-                    {!userSessionId ? (
+                    {!user ? (
                       <div className="py-8 px-4 text-center space-y-2">
                         <Bell className="w-8 h-8 mx-auto text-zinc-600 stroke-[1.5]" />
                         <p className="text-xs font-bold text-zinc-300">Chưa đăng nhập</p>
                         <p className="text-[11px] text-zinc-400 leading-relaxed max-w-[240px] mx-auto">
-                          Đăng nhập để nhận thông báo tự động khi các bộ phim bạn theo dõi có tập mới.
+                          Đăng nhập để nhận thông báo tự động khi các bộ phim bạn theo dõi có tập
+                          mới.
                         </p>
                         <button
                           type="button"
@@ -2446,10 +2702,11 @@ export function HomePage() {
                               setShowNotifications(false);
                             }
                           }}
-                          className={`p-2.5 rounded-xl transition cursor-pointer flex gap-3 items-start ${n.read
+                          className={`p-2.5 rounded-xl transition cursor-pointer flex gap-3 items-start ${
+                            n.read
                               ? "bg-white/[0.02] hover:bg-white/[0.05] text-zinc-400"
                               : "bg-pink-600/10 hover:bg-pink-600/15 border border-pink-500/20 text-zinc-200"
-                            }`}
+                          }`}
                         >
                           {n.poster ? (
                             <img
@@ -2464,13 +2721,17 @@ export function HomePage() {
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-1">
-                              <h4 className="text-xs font-bold truncate text-zinc-100">{n.title}</h4>
+                              <h4 className="text-xs font-bold truncate text-zinc-100">
+                                {n.title}
+                              </h4>
                               {!n.read && (
                                 <span className="w-2 h-2 rounded-full bg-pink-500 shrink-0 shadow-[0_0_6px_#ec4899]" />
                               )}
                             </div>
                             {n.body && (
-                              <p className="text-[11px] text-zinc-400 line-clamp-2 mt-0.5">{n.body}</p>
+                              <p className="text-[11px] text-zinc-400 line-clamp-2 mt-0.5">
+                                {n.body}
+                              </p>
                             )}
                             <span className="text-[10px] text-zinc-400 mt-1 block">
                               {new Date(n.created_at).toLocaleDateString("vi-VN", {
@@ -2511,14 +2772,20 @@ export function HomePage() {
                 <div className="absolute right-0 mt-3 w-64 rounded-2xl bg-[#12121a]/95 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/80 z-50 overflow-hidden animate-in fade-in duration-150 p-2 space-y-1">
                   <div className="p-3 border-b border-white/[0.06] flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full border border-pink-500/40 bg-pink-950/40 overflow-hidden flex items-center justify-center shrink-0">
-                      <img src="/assets/mochi/mascot-mini.png" alt="Avatar" className="w-full h-full object-cover" />
+                      <img
+                        src="/assets/mochi/mascot-mini.png"
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-white truncate">
                         {currentUser?.name || currentUser?.email || "Chưa đăng nhập"}
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${currentUser ? "bg-emerald-400" : "bg-zinc-500"}`} />
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${currentUser ? "bg-emerald-400" : "bg-zinc-500"}`}
+                        />
                         <span className="text-[10px] text-zinc-400 font-medium">
                           {currentUser ? "Đã đăng nhập (Nguồn mở)" : "Khách truy cập"}
                         </span>
@@ -2572,9 +2839,7 @@ export function HomePage() {
                         <Clock className="w-3.5 h-3.5 text-pink-400" />
                         <span>Lịch sử xem phim</span>
                       </div>
-                      <span className="text-[10px] text-zinc-400">
-                        {continueList.length} phim
-                      </span>
+                      <span className="text-[10px] text-zinc-400">{continueList.length} phim</span>
                     </button>
 
                     <button
@@ -2670,7 +2935,9 @@ export function HomePage() {
                     <AlertCircle className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-base font-bold text-white">Không thể kết nối máy chủ phim</h3>
+                    <h3 className="text-base font-bold text-white">
+                      Không thể kết nối máy chủ phim
+                    </h3>
                     <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
                       Đã xảy ra lỗi khi tải danh sách phim từ máy chủ. Vui lòng thử lại.
                     </p>
@@ -2698,7 +2965,12 @@ export function HomePage() {
                     <section className="relative w-full rounded-3xl overflow-hidden border border-white/[0.07] bg-[#111118] min-h-[460px] md:min-h-[520px] flex items-end shadow-2xl">
                       <div className="absolute inset-0 z-0">
                         <img
-                          src={heroDetail?.backdrop || currentHero.backdrop || currentHero.thumb || currentHero.poster}
+                          src={
+                            heroDetail?.backdrop ||
+                            currentHero.backdrop ||
+                            currentHero.thumb ||
+                            currentHero.poster
+                          }
                           alt={currentHero.name}
                           className="w-full h-full object-cover object-center filter brightness-90 transition-all duration-700 transform scale-100"
                         />
@@ -2712,23 +2984,29 @@ export function HomePage() {
                             <Flame className="w-3.5 h-3.5 fill-current animate-pulse" />
                             #1 Thịnh Hành Hôm Nay
                           </span>
-                          {currentHero.vote_average !== undefined && currentHero.vote_average > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold">
-                              <Star className="w-3.5 h-3.5 fill-current" />
-                              {currentHero.vote_average}
-                            </span>
-                          )}
+                          {currentHero.vote_average !== undefined &&
+                            currentHero.vote_average > 0 && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold">
+                                <Star className="w-3.5 h-3.5 fill-current" />
+                                {currentHero.vote_average}
+                              </span>
+                            )}
                           <span className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md text-white/90 text-xs font-semibold">
                             {currentHero.year || "2026"}
                           </span>
                           <span className="px-2.5 py-1 rounded-full bg-pink-500/20 border border-pink-500/30 text-pink-300 text-xs font-semibold">
                             {currentHero.quality || "4K Ultra HD"}
                           </span>
-                          {(heroDetail?.genres || currentHero.category || []).slice(0, 3).map((g) => (
-                            <span key={g} className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md text-white/90 text-xs font-semibold">
-                              {g}
-                            </span>
-                          ))}
+                          {(heroDetail?.genres || currentHero.category || [])
+                            .slice(0, 3)
+                            .map((g) => (
+                              <span
+                                key={g}
+                                className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md text-white/90 text-xs font-semibold"
+                              >
+                                {g}
+                              </span>
+                            ))}
                         </div>
 
                         <div className="space-y-1">
@@ -2757,10 +3035,11 @@ export function HomePage() {
 
                           <button
                             onClick={() => toggleFavorite(currentHero)}
-                            className={`px-5 py-3 rounded-2xl border font-semibold text-sm backdrop-blur-xl flex items-center gap-2 transition duration-200 cursor-pointer ${isCurrentHeroFavorite
+                            className={`px-5 py-3 rounded-2xl border font-semibold text-sm backdrop-blur-xl flex items-center gap-2 transition duration-200 cursor-pointer ${
+                              isCurrentHeroFavorite
                                 ? "bg-pink-600/20 border-pink-500 text-pink-300"
                                 : "bg-white/10 hover:bg-white/20 border-white/10 text-white"
-                              }`}
+                            }`}
                           >
                             {isCurrentHeroFavorite ? (
                               <>
@@ -2784,12 +3063,17 @@ export function HomePage() {
                             <button
                               key={hero.slug}
                               onClick={() => setActiveHeroIndex(idx)}
-                              className={`relative w-12 h-8 rounded-xl overflow-hidden transition-all duration-300 border-2 cursor-pointer ${activeHeroIndex === idx
+                              className={`relative w-12 h-8 rounded-xl overflow-hidden transition-all duration-300 border-2 cursor-pointer ${
+                                activeHeroIndex === idx
                                   ? "border-pink-500 scale-105 shadow-md shadow-pink-500/50"
                                   : "border-transparent opacity-60 hover:opacity-100"
-                                }`}
+                              }`}
                             >
-                              <img src={hero.thumb || hero.poster} alt="" className="w-full h-full object-cover" />
+                              <img
+                                src={hero.thumb || hero.poster}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
                             </button>
                           ))}
                         </div>
@@ -2842,10 +3126,11 @@ export function HomePage() {
                                 navigateToCategory("the-loai", genre);
                               }
                             }}
-                            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${isSelected
+                            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                              isSelected
                                 ? "bg-gradient-to-r from-pink-600 to-rose-600 text-white pink-glow-sm shadow-pink-500/30 font-bold"
                                 : "bg-[#13131b] hover:bg-[#1c1c27] text-zinc-400 hover:text-zinc-100 border border-white/[0.06]"
-                              }`}
+                            }`}
                           >
                             {genre}
                           </button>
@@ -2889,7 +3174,10 @@ export function HomePage() {
                     {isLoadingMovies && trendingMovies.length === 0 ? (
                       <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
                         {Array.from({ length: 5 }).map((_, i) => (
-                          <div key={i} className="flex-none w-[200px] sm:w-[220px] space-y-3 animate-pulse">
+                          <div
+                            key={i}
+                            className="flex-none w-[200px] sm:w-[220px] space-y-3 animate-pulse"
+                          >
                             <div className="aspect-[2/3] rounded-2xl bg-white/[0.04] border border-white/[0.04]" />
                             <div className="h-4 w-3/4 rounded bg-white/[0.06]" />
                             <div className="h-3 w-1/2 rounded bg-white/[0.04]" />
@@ -2924,7 +3212,9 @@ export function HomePage() {
                                       <Star className="w-3 h-3 fill-current" />
                                       {movie.vote_average}
                                     </span>
-                                  ) : <span />}
+                                  ) : (
+                                    <span />
+                                  )}
                                   {movie.quality && (
                                     <span className="px-2 py-0.5 rounded-md bg-pink-600/80 backdrop-blur-md text-[10px] font-bold text-white uppercase">
                                       {movie.quality}
@@ -2973,7 +3263,9 @@ export function HomePage() {
                             <Clock className="w-5 h-5 text-pink-400" />
                             <span>Xem Tiếp (Lịch Sử Thật)</span>
                           </h2>
-                          <span className="text-xs text-zinc-400 hidden sm:inline">Tiếp tục trải nghiệm</span>
+                          <span className="text-xs text-zinc-400 hidden sm:inline">
+                            Tiếp tục trải nghiệm
+                          </span>
                         </div>
                         <button
                           type="button"
@@ -3069,7 +3361,9 @@ export function HomePage() {
                       <div className="flex items-center gap-3">
                         {/* Bộ chọn nguồn máy chủ nhanh ngay trên Trang Chủ */}
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-zinc-400 font-medium hidden sm:inline">Nguồn:</span>
+                          <span className="text-xs text-zinc-400 font-medium hidden sm:inline">
+                            Nguồn:
+                          </span>
                           <div className="flex items-center p-1 rounded-xl bg-black/40 border border-white/[0.08]">
                             {(["all", "kkphim", "nguonc"] as SourceFilter[]).map((srcId) => {
                               const active = selectedSource === srcId;
@@ -3078,12 +3372,17 @@ export function HomePage() {
                                   key={srcId}
                                   type="button"
                                   onClick={() => handleSelectSource(srcId)}
-                                  className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${active
+                                  className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                                    active
                                       ? "bg-pink-600 text-white shadow-sm"
                                       : "text-zinc-400 hover:text-zinc-200"
-                                    }`}
+                                  }`}
                                 >
-                                  {srcId === "all" ? "Tất cả" : srcId === "kkphim" ? "KKPhim" : "NguonC"}
+                                  {srcId === "all"
+                                    ? "Tất cả"
+                                    : srcId === "kkphim"
+                                      ? "KKPhim"
+                                      : "NguonC"}
                                 </button>
                               );
                             })}
@@ -3184,9 +3483,7 @@ export function HomePage() {
                         <h3 className="text-base font-bold text-zinc-200">
                           Khám Phá Thêm Phim Mới
                         </h3>
-                        <span className="text-xs text-zinc-400">
-                          {displayedMovies.length} phim
-                        </span>
+                        <span className="text-xs text-zinc-400">{displayedMovies.length} phim</span>
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -3368,12 +3665,17 @@ export function HomePage() {
                                 key={srcId}
                                 type="button"
                                 onClick={() => handleSelectSource(srcId)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${active
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                                  active
                                     ? "bg-pink-600 text-white shadow-sm"
                                     : "text-zinc-400 hover:text-zinc-200"
-                                  }`}
+                                }`}
                               >
-                                {srcId === "all" ? "Tất cả" : srcId === "kkphim" ? "KKPhim" : "NguonC"}
+                                {srcId === "all"
+                                  ? "Tất cả"
+                                  : srcId === "kkphim"
+                                    ? "KKPhim"
+                                    : "NguonC"}
                               </button>
                             );
                           })}
@@ -3392,10 +3694,7 @@ export function HomePage() {
                     >
                       <span className="sr-only">Đang tải danh sách phim...</span>
                       {Array.from({ length: 12 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="space-y-3 animate-pulse motion-reduce:animate-none"
-                        >
+                        <div key={i} className="space-y-3 animate-pulse motion-reduce:animate-none">
                           <div className="aspect-[2/3] rounded-2xl bg-white/[0.04] border border-white/[0.04]" />
                           <div className="h-4 w-3/4 rounded bg-white/[0.06]" />
                           <div className="h-3 w-1/2 rounded bg-white/[0.04]" />
@@ -3413,9 +3712,12 @@ export function HomePage() {
                         <AlertCircle className="w-6 h-6" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="text-base font-bold text-white">Không thể kết nối máy chủ phim</h3>
+                        <h3 className="text-base font-bold text-white">
+                          Không thể kết nối máy chủ phim
+                        </h3>
                         <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
-                          Không thể tải danh sách phim cho <b>{currentNavTitle}</b> từ nguồn {selectedSource === "all" ? "tất cả máy chủ" : selectedSource}.
+                          Không thể tải danh sách phim cho <b>{currentNavTitle}</b> từ nguồn{" "}
+                          {selectedSource === "all" ? "tất cả máy chủ" : selectedSource}.
                         </p>
                       </div>
                       <div className="flex items-center justify-center gap-3 pt-2">
@@ -3442,7 +3744,9 @@ export function HomePage() {
                       className="py-20 px-6 text-center space-y-3 bg-[#12121a]/50 rounded-3xl border border-white/[0.04]"
                     >
                       <Film className="w-12 h-12 mx-auto text-zinc-600 stroke-[1.5]" />
-                      <h3 className="text-base font-bold text-zinc-300">{filterEmptyState.title}</h3>
+                      <h3 className="text-base font-bold text-zinc-300">
+                        {filterEmptyState.title}
+                      </h3>
                       <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
                         {filterEmptyState.message}
                       </p>
@@ -3533,10 +3837,7 @@ export function HomePage() {
       {/* ------------------------------------------------------------- */}
       {/* MODAL 1: VIP FEATURE NOTICE (Honest State, No Fake Success)    */}
       {/* ------------------------------------------------------------- */}
-      <VipNoticeModal
-        isOpen={showVipNoticeModal}
-        onClose={() => setShowVipNoticeModal(false)}
-      />
+      <VipNoticeModal isOpen={showVipNoticeModal} onClose={() => setShowVipNoticeModal(false)} />
 
       {/* ------------------------------------------------------------- */}
       {/* MODAL: CONFIRMATION DIALOG FOR DELETE ACTIONS                 */}

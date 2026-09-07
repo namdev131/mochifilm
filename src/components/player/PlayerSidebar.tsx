@@ -55,9 +55,7 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
         const histRaw = localStorage.getItem("lv-progress");
         if (histRaw) {
           const histObj = JSON.parse(histRaw);
-          setHistoryCount(
-            typeof histObj === "object" && histObj ? Object.keys(histObj).length : 0
-          );
+          setHistoryCount(typeof histObj === "object" && histObj ? Object.keys(histObj).length : 0);
         } else {
           setHistoryCount(0);
         }
@@ -101,10 +99,10 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
     currentSource === "all"
       ? "Tất cả"
       : currentSource === "kkphim"
-      ? "KKPhim"
-      : currentSource === "nguonc"
-      ? "NguonC"
-      : currentSource;
+        ? "KKPhim"
+        : currentSource === "nguonc"
+          ? "NguonC"
+          : currentSource;
 
   return (
     <aside className="sidebar fixed top-0 bottom-0 left-0 z-50 w-[268px] min-w-[268px] max-w-[268px] flex flex-col justify-between bg-[#0e0e14]/95 backdrop-blur-2xl border-r border-white/[0.06] transition-transform duration-300 ease-in-out">
@@ -446,9 +444,7 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
 
             <button
               type="button"
-              onClick={() =>
-                onShowToast("Gói Mochi Premium đang miễn phí trải nghiệm!")
-              }
+              onClick={() => onShowToast("Gói Mochi Premium đang miễn phí trải nghiệm!")}
               className="mt-1 w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white text-xs font-bold shadow-md shadow-pink-600/20 transition flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Crown className="w-3.5 h-3.5 fill-current" />

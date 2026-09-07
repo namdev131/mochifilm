@@ -140,10 +140,12 @@ export const FavoritesTab: React.FC<FavoritesTabProps> = ({
         <div className="py-20 text-center space-y-3 bg-[#12121a]/50 rounded-3xl border border-white/[0.04]">
           <Film className="w-12 h-12 mx-auto text-zinc-600 stroke-[1.5]" />
           <h3 className="text-base font-bold text-zinc-300">
-            Chưa có phim yêu thích từ nguồn {selectedSource === "all" ? "máy chủ này" : selectedSource.toUpperCase()}
+            Chưa có phim yêu thích từ nguồn{" "}
+            {selectedSource === "all" ? "máy chủ này" : selectedSource.toUpperCase()}
           </h3>
           <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed">
-            Bạn có {favorites.length} phim đã lưu từ các nguồn khác. Hãy chọn "Tất cả" để xem toàn bộ danh sách yêu thích.
+            Bạn có {favorites.length} phim đã lưu từ các nguồn khác. Hãy chọn "Tất cả" để xem toàn
+            bộ danh sách yêu thích.
           </p>
           <button
             type="button"

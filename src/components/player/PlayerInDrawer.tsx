@@ -29,7 +29,9 @@ export const PlayerInDrawer: React.FC<PlayerInDrawerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<"episodes" | "servers">(open || "episodes");
   const [selectedServerTab, setSelectedServerTab] = useState<number>(activeServerIndex);
-  const [activeLangFilter, setActiveLangFilter] = useState<"all" | "vietsub" | "thuyetminh" | "longtieng">("all");
+  const [activeLangFilter, setActiveLangFilter] = useState<
+    "all" | "vietsub" | "thuyetminh" | "longtieng"
+  >("all");
 
   useEffect(() => {
     if (open) {
@@ -57,16 +59,18 @@ export const PlayerInDrawer: React.FC<PlayerInDrawerProps> = ({
   const currentEpItems = currentServer?.items || [];
   const totalEpisodes = currentEpItems.length;
 
-  const hasVietsub = servers?.some((s) => detectServerLang(s.server_name || "", movieLang) === "vietsub");
-  const hasThuyetMinh = servers?.some((s) => detectServerLang(s.server_name || "", movieLang) === "thuyetminh");
-  const hasLongTieng = servers?.some((s) => detectServerLang(s.server_name || "", movieLang) === "longtieng");
+  const hasVietsub = servers?.some(
+    (s) => detectServerLang(s.server_name || "", movieLang) === "vietsub",
+  );
+  const hasThuyetMinh = servers?.some(
+    (s) => detectServerLang(s.server_name || "", movieLang) === "thuyetminh",
+  );
+  const hasLongTieng = servers?.some(
+    (s) => detectServerLang(s.server_name || "", movieLang) === "longtieng",
+  );
 
   return (
-    <div
-      className="player-in-drawer-backdrop"
-      onClick={onClose}
-      aria-label="Đóng bảng điều khiển"
-    >
+    <div className="player-in-drawer-backdrop" onClick={onClose} aria-label="Đóng bảng điều khiển">
       <div
         className="player-in-drawer-content"
         onClick={(e) => e.stopPropagation()}
@@ -124,10 +128,15 @@ export const PlayerInDrawer: React.FC<PlayerInDrawerProps> = ({
                     className={`drawer-lang-chip ${activeLangFilter === "vietsub" ? "active" : ""}`}
                     onClick={() => {
                       setActiveLangFilter("vietsub");
-                      const fIdx = servers?.findIndex((s) => detectServerLang(s.server_name || "", movieLang) === "vietsub");
+                      const fIdx = servers?.findIndex(
+                        (s) => detectServerLang(s.server_name || "", movieLang) === "vietsub",
+                      );
                       if (fIdx !== undefined && fIdx >= 0) {
                         setSelectedServerTab(fIdx);
-                        const targetEp = Math.min(activeEpisodeIndex, (servers?.[fIdx]?.items?.length || 1) - 1);
+                        const targetEp = Math.min(
+                          activeEpisodeIndex,
+                          (servers?.[fIdx]?.items?.length || 1) - 1,
+                        );
                         onSelectEpisode?.(fIdx, Math.max(0, targetEp));
                       }
                     }}
@@ -142,10 +151,15 @@ export const PlayerInDrawer: React.FC<PlayerInDrawerProps> = ({
                     className={`drawer-lang-chip ${activeLangFilter === "thuyetminh" ? "active" : ""}`}
                     onClick={() => {
                       setActiveLangFilter("thuyetminh");
-                      const fIdx = servers?.findIndex((s) => detectServerLang(s.server_name || "", movieLang) === "thuyetminh");
+                      const fIdx = servers?.findIndex(
+                        (s) => detectServerLang(s.server_name || "", movieLang) === "thuyetminh",
+                      );
                       if (fIdx !== undefined && fIdx >= 0) {
                         setSelectedServerTab(fIdx);
-                        const targetEp = Math.min(activeEpisodeIndex, (servers?.[fIdx]?.items?.length || 1) - 1);
+                        const targetEp = Math.min(
+                          activeEpisodeIndex,
+                          (servers?.[fIdx]?.items?.length || 1) - 1,
+                        );
                         onSelectEpisode?.(fIdx, Math.max(0, targetEp));
                       }
                     }}
@@ -160,10 +174,15 @@ export const PlayerInDrawer: React.FC<PlayerInDrawerProps> = ({
                     className={`drawer-lang-chip ${activeLangFilter === "longtieng" ? "active" : ""}`}
                     onClick={() => {
                       setActiveLangFilter("longtieng");
-                      const fIdx = servers?.findIndex((s) => detectServerLang(s.server_name || "", movieLang) === "longtieng");
+                      const fIdx = servers?.findIndex(
+                        (s) => detectServerLang(s.server_name || "", movieLang) === "longtieng",
+                      );
                       if (fIdx !== undefined && fIdx >= 0) {
                         setSelectedServerTab(fIdx);
-                        const targetEp = Math.min(activeEpisodeIndex, (servers?.[fIdx]?.items?.length || 1) - 1);
+                        const targetEp = Math.min(
+                          activeEpisodeIndex,
+                          (servers?.[fIdx]?.items?.length || 1) - 1,
+                        );
                         onSelectEpisode?.(fIdx, Math.max(0, targetEp));
                       }
                     }}
@@ -181,7 +200,8 @@ export const PlayerInDrawer: React.FC<PlayerInDrawerProps> = ({
                 {servers.map((srv, sIdx) => {
                   const isTabActive = selectedServerTab === sIdx;
                   const lang = detectServerLang(srv.server_name || "", movieLang);
-                  const langBadge = lang === "thuyetminh" ? "🎙️" : lang === "longtieng" ? "🗣️" : "🇻🇳";
+                  const langBadge =
+                    lang === "thuyetminh" ? "🎙️" : lang === "longtieng" ? "🗣️" : "🇻🇳";
                   return (
                     <button
                       key={sIdx}
@@ -205,8 +225,7 @@ export const PlayerInDrawer: React.FC<PlayerInDrawerProps> = ({
               <div className="drawer-episodes-grid">
                 {currentEpItems.map((epItem, epIdx) => {
                   const isEpActive =
-                    activeServerIndex === selectedServerTab &&
-                    activeEpisodeIndex === epIdx;
+                    activeServerIndex === selectedServerTab && activeEpisodeIndex === epIdx;
                   return (
                     <button
                       key={epItem.slug || epIdx}
@@ -226,9 +245,7 @@ export const PlayerInDrawer: React.FC<PlayerInDrawerProps> = ({
                 })}
               </div>
             ) : (
-              <div className="drawer-empty-state">
-                Chưa có danh sách tập từ máy chủ này.
-              </div>
+              <div className="drawer-empty-state">Chưa có danh sách tập từ máy chủ này.</div>
             )}
           </div>
         )}
@@ -242,7 +259,12 @@ export const PlayerInDrawer: React.FC<PlayerInDrawerProps> = ({
                 servers.map((srv, sIdx) => {
                   const isServerActive = activeServerIndex === sIdx;
                   const lang = detectServerLang(srv.server_name || "", movieLang);
-                  const langBadge = lang === "thuyetminh" ? "🎙️ Thuyết Minh" : lang === "longtieng" ? "🗣️ Lồng Tiếng" : "🇻🇳 Vietsub";
+                  const langBadge =
+                    lang === "thuyetminh"
+                      ? "🎙️ Thuyết Minh"
+                      : lang === "longtieng"
+                        ? "🗣️ Lồng Tiếng"
+                        : "🇻🇳 Vietsub";
                   return (
                     <button
                       key={sIdx}
@@ -251,7 +273,7 @@ export const PlayerInDrawer: React.FC<PlayerInDrawerProps> = ({
                       onClick={() => {
                         const targetEpIdx = Math.min(
                           activeEpisodeIndex,
-                          (srv.items?.length || 1) - 1
+                          (srv.items?.length || 1) - 1,
                         );
                         onSelectEpisode?.(sIdx, targetEpIdx >= 0 ? targetEpIdx : 0);
                         onClose();

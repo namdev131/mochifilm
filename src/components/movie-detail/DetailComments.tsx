@@ -143,11 +143,21 @@ export const DetailComments: React.FC<DetailCommentsProps> = ({ movieSlug, onSho
             }}
             aria-label="Chọn điểm đánh giá"
           >
-            <option value={5} style={{ background: "#171016", color: "#ffc75d" }}>★ 5 - Tuyệt vời</option>
-            <option value={4} style={{ background: "#171016", color: "#ffc75d" }}>★ 4 - Rất hay</option>
-            <option value={3} style={{ background: "#171016", color: "#ffc75d" }}>★ 3 - Khá ổn</option>
-            <option value={2} style={{ background: "#171016", color: "#ffc75d" }}>★ 2 - Tạm được</option>
-            <option value={1} style={{ background: "#171016", color: "#ffc75d" }}>★ 1 - Chưa hay</option>
+            <option value={5} style={{ background: "#171016", color: "#ffc75d" }}>
+              ★ 5 - Tuyệt vời
+            </option>
+            <option value={4} style={{ background: "#171016", color: "#ffc75d" }}>
+              ★ 4 - Rất hay
+            </option>
+            <option value={3} style={{ background: "#171016", color: "#ffc75d" }}>
+              ★ 3 - Khá ổn
+            </option>
+            <option value={2} style={{ background: "#171016", color: "#ffc75d" }}>
+              ★ 2 - Tạm được
+            </option>
+            <option value={1} style={{ background: "#171016", color: "#ffc75d" }}>
+              ★ 1 - Chưa hay
+            </option>
           </select>
           <button type="submit">Gửi</button>
         </div>

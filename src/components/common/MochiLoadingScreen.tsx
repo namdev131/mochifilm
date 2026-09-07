@@ -123,6 +123,7 @@ function getLoggedInUserName(): string {
   return "bạn";
 }
 
+// Cờ ghi nhận trạng thái vào web: hasShownInitialWebLoading
 export const MochiLoadingScreen: React.FC = () => {
   const [loadingMode, setLoadingMode] = useState<"initial" | "movie" | "none">("initial");
   const [isVisible, setIsVisible] = useState(true);
@@ -170,7 +171,7 @@ export const MochiLoadingScreen: React.FC = () => {
       0,
       0,
       CELL_W * SCALE,
-      CELL_H * SCALE
+      CELL_H * SCALE,
     );
   }, []);
 
@@ -220,7 +221,7 @@ export const MochiLoadingScreen: React.FC = () => {
       setDescText(
         cleanMovieName
           ? `Đang lấy dữ liệu "${cleanMovieName}" từ ${sourceLabel}...`
-          : `Đang lấy dữ liệu chi tiết phim từ ${sourceLabel}...`
+          : `Đang lấy dữ liệu chi tiết phim từ ${sourceLabel}...`,
       );
       setBubbleText(userText("Lấy phim ngay đây, {name}~", name));
 
@@ -246,7 +247,7 @@ export const MochiLoadingScreen: React.FC = () => {
         setBubbleText(userText(p.bubble, name));
       }, 60);
     },
-    [draw, userText]
+    [draw, userText],
   );
 
   const finishMovieLoading = useCallback(() => {
@@ -270,8 +271,7 @@ export const MochiLoadingScreen: React.FC = () => {
 
     let currentProg = 0;
     timerRef.current = setInterval(() => {
-      const delta =
-        currentProg < 20 ? 3.4 : currentProg < 65 ? 2.5 : currentProg < 90 ? 1.5 : 0.8;
+      const delta = currentProg < 20 ? 3.4 : currentProg < 65 ? 2.5 : currentProg < 90 ? 1.5 : 0.8;
       currentProg = Math.min(100, currentProg + delta + Math.random() * 0.6);
       setProgress(currentProg);
 
@@ -392,12 +392,7 @@ export const MochiLoadingScreen: React.FC = () => {
   const currentDotIdx = activeDotIndex !== -1 ? activeDotIndex : currentPhases.length - 1;
 
   return (
-    <div
-      id="mochiLoading"
-      className={isVisible ? "" : "hidden"}
-      role="status"
-      aria-live="polite"
-    >
+    <div id="mochiLoading" className={isVisible ? "" : "hidden"} role="status" aria-live="polite">
       <div className="mochi-loading-ambient" />
       <div className="mochi-loading-orbit" />
       <div className="mochi-loading-sparkles">

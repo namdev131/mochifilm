@@ -59,7 +59,8 @@ export function usePlayerControlsVisibility(isPlaying: boolean) {
     clearTimer();
     setControlsVisible((visible) => {
       const next = !visible;
-      if (next && isPlaying) controlsTimerRef.current = setTimeout(() => setControlsVisible(false), 3000);
+      if (next && isPlaying)
+        controlsTimerRef.current = setTimeout(() => setControlsVisible(false), 3000);
       return next;
     });
   };

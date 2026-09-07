@@ -15,12 +15,30 @@ interface PlayerRightbarProps {
   onShowToast: (msg: string) => void;
 }
 
-export function detectServerLang(name: string, fallbackLang?: string): "vietsub" | "thuyetminh" | "longtieng" | "other" {
+export function detectServerLang(
+  name: string,
+  fallbackLang?: string,
+): "vietsub" | "thuyetminh" | "longtieng" | "other" {
   const n = (name || "").toLowerCase();
-  if (n.includes("lồng") || n.includes("long tieng") || n.includes("dub") || n.includes("lt")) return "longtieng";
-  if (n.includes("thuyết") || n.includes("thuyet") || n.includes("tm") || n.includes("voiceover") || n.includes("thuyetminh")) return "thuyetminh";
-  if (n.includes("vietsub") || n.includes("vsub") || n.includes("phụ đề") || n.includes("sub") || n.includes("viet sub")) return "vietsub";
-  
+  if (n.includes("lồng") || n.includes("long tieng") || n.includes("dub") || n.includes("lt"))
+    return "longtieng";
+  if (
+    n.includes("thuyết") ||
+    n.includes("thuyet") ||
+    n.includes("tm") ||
+    n.includes("voiceover") ||
+    n.includes("thuyetminh")
+  )
+    return "thuyetminh";
+  if (
+    n.includes("vietsub") ||
+    n.includes("vsub") ||
+    n.includes("phụ đề") ||
+    n.includes("sub") ||
+    n.includes("viet sub")
+  )
+    return "vietsub";
+
   if (fallbackLang) {
     const f = fallbackLang.toLowerCase();
     if (f.includes("lồng") || f.includes("long tieng") || f.includes("dub")) return "longtieng";
@@ -63,7 +81,10 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
   const currentServer = servers?.[selectedServerTab] || servers?.[0] || null;
   const currentEpItems = currentServer?.items || [];
   const totalEpCount = servers?.reduce((acc, s) => acc + s.items.length, 0) || 0;
-  const currentActiveLang = detectServerLang(servers?.[activeServerIndex]?.server_name || "", movieLang);
+  const currentActiveLang = detectServerLang(
+    servers?.[activeServerIndex]?.server_name || "",
+    movieLang,
+  );
 
   const handleSwitchServer = (sIdx: number) => {
     setSelectedServerTab(sIdx);
@@ -78,9 +99,7 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
       <section className="right-card episodes-card" id="playerEpisodesPanel">
         <h3>
           <span>🎬 Danh sách tập</span>
-          {totalEpCount > 0 && (
-            <span className="ep-badge-count">{totalEpCount} tập</span>
-          )}
+          {totalEpCount > 0 && <span className="ep-badge-count">{totalEpCount} tập</span>}
         </h3>
 
         <div className="episodes-body">
@@ -92,8 +111,8 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
                 {currentActiveLang === "thuyetminh"
                   ? "🎙️ Thuyết Minh"
                   : currentActiveLang === "longtieng"
-                  ? "🗣️ Lồng Tiếng"
-                  : "🇻🇳 Vietsub"}
+                    ? "🗣️ Lồng Tiếng"
+                    : "🇻🇳 Vietsub"}
               </span>
             </div>
             <div className="lang-pills-row">
@@ -126,11 +145,15 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
                     onShowToast("Đã chọn bản Thuyết Minh");
                   } else {
                     onShowToast(
-                      `Kho phim ${providerId?.toUpperCase() || ""} chưa có Thuyết minh. Bạn thử chuyển sang kho phim khác bên dưới nhé!`
+                      `Kho phim ${providerId?.toUpperCase() || ""} chưa có Thuyết minh. Bạn thử chuyển sang kho phim khác bên dưới nhé!`,
                     );
                   }
                 }}
-                title={langGroups.thuyetminh.length > 0 ? "Xem bản Thuyết Minh" : "Chưa có Thuyết Minh trên kho này"}
+                title={
+                  langGroups.thuyetminh.length > 0
+                    ? "Xem bản Thuyết Minh"
+                    : "Chưa có Thuyết Minh trên kho này"
+                }
               >
                 <Mic className="lang-icon" />
                 <span>Thuyết Minh</span>
@@ -152,7 +175,11 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
                     onShowToast(`Kho phim ${providerId?.toUpperCase() || ""} chưa có Lồng tiếng.`);
                   }
                 }}
-                title={langGroups.longtieng.length > 0 ? "Xem bản Lồng Tiếng" : "Chưa có Lồng Tiếng trên kho này"}
+                title={
+                  langGroups.longtieng.length > 0
+                    ? "Xem bản Lồng Tiếng"
+                    : "Chưa có Lồng Tiếng trên kho này"
+                }
               >
                 <Volume2 className="lang-icon" />
                 <span>Lồng Tiếng</span>
@@ -178,7 +205,8 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
                 {servers.map((srv, sIdx) => {
                   const isTabActive = activeServerIndex === sIdx;
                   const lang = detectServerLang(srv.server_name || "", movieLang);
-                  const langBadge = lang === "thuyetminh" ? "🎙️ TM" : lang === "longtieng" ? "🗣️ LT" : "🇻🇳 Sub";
+                  const langBadge =
+                    lang === "thuyetminh" ? "🎙️ TM" : lang === "longtieng" ? "🗣️ LT" : "🇻🇳 Sub";
                   return (
                     <button
                       key={sIdx}
@@ -228,8 +256,7 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
             <div className="episode-grid">
               {currentEpItems.map((epItem, epIdx) => {
                 const isEpActive =
-                  activeServerIndex === selectedServerTab &&
-                  activeEpisodeIndex === epIdx;
+                  activeServerIndex === selectedServerTab && activeEpisodeIndex === epIdx;
                 return (
                   <button
                     key={epItem.slug || epIdx}
@@ -245,9 +272,7 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
               })}
             </div>
           ) : (
-            <div className="episodes-empty">
-              Chưa có danh sách tập từ máy chủ này.
-            </div>
+            <div className="episodes-empty">Chưa có danh sách tập từ máy chủ này.</div>
           )}
         </div>
       </section>
@@ -286,7 +311,9 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
         }}
       >
         <strong style={{ fontSize: 10 }}>Mochi mách nhỏ 💕</strong>
-        <p style={{ margin: "5px 0", width: "60%", color: "#978a92", fontSize: 8, lineHeight: 1.5 }}>
+        <p
+          style={{ margin: "5px 0", width: "60%", color: "#978a92", fontSize: 8, lineHeight: 1.5 }}
+        >
           Nhấn F để xem toàn màn hình, hoặc Space để play/pause nha sếp.
         </p>
         <img

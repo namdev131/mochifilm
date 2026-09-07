@@ -64,9 +64,7 @@ export const MoviePreviewModal: React.FC<MoviePreviewModalProps> = ({
               <span className="px-2.5 py-0.5 rounded-full bg-pink-600 text-white text-[10px] font-bold uppercase tracking-wider">
                 {movie.quality || "Full HD"}
               </span>
-              <h3 className="text-2xl sm:text-3xl font-black text-white mt-1">
-                {movie.name}
-              </h3>
+              <h3 className="text-2xl sm:text-3xl font-black text-white mt-1">{movie.name}</h3>
               {movie.origin_name && (
                 <p className="text-xs text-pink-300 italic">{movie.origin_name}</p>
               )}
@@ -79,7 +77,9 @@ export const MoviePreviewModal: React.FC<MoviePreviewModalProps> = ({
           {activeEpisodeName && (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-pink-500/10 border border-pink-500/20 text-xs text-pink-300">
               <Play className="w-4 h-4 text-pink-400 fill-current" />
-              <span>Đang phát: <b>{activeEpisodeName}</b> • Tiến độ đã lưu vào Xem Tiếp</span>
+              <span>
+                Đang phát: <b>{activeEpisodeName}</b> • Tiến độ đã lưu vào Xem Tiếp
+              </span>
             </div>
           )}
 
@@ -91,7 +91,9 @@ export const MoviePreviewModal: React.FC<MoviePreviewModalProps> = ({
               </span>
             )}
             <span>• Năm: {movie.year || "2026"}</span>
-            <span>• Nguồn: <b className="uppercase text-pink-400">{movie.source}</b></span>
+            <span>
+              • Nguồn: <b className="uppercase text-pink-400">{movie.source}</b>
+            </span>
             <span>• {movie.episode_current || "Hoàn tất"}</span>
           </div>
 
@@ -146,7 +148,8 @@ export const MoviePreviewModal: React.FC<MoviePreviewModalProps> = ({
               </div>
             ) : !isLoadingDetail ? (
               <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200">
-                Máy chủ <b>{movie.source}</b> chưa cung cấp danh sách tập hoặc liên kết phát trực tiếp cho phim này. Vui lòng chuyển đổi nguồn phim khác để tìm bản phát phù hợp.
+                Máy chủ <b>{movie.source}</b> chưa cung cấp danh sách tập hoặc liên kết phát trực
+                tiếp cho phim này. Vui lòng chuyển đổi nguồn phim khác để tìm bản phát phù hợp.
               </div>
             ) : null}
           </div>

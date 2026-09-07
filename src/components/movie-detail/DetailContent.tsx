@@ -38,7 +38,9 @@ export const DetailContent: React.FC<DetailContentProps> = ({
         <article className="panel" style={{ marginBottom: 10 }}>
           <div className="panel-head">
             <h2>
-              Đang phát: <span style={{ color: "var(--pink)" }}>{activeEpisode?.name || "Tập phim"}</span> (Máy chủ #{activeServerIndex + 1})
+              Đang phát:{" "}
+              <span style={{ color: "var(--pink)" }}>{activeEpisode?.name || "Tập phim"}</span> (Máy
+              chủ #{activeServerIndex + 1})
             </h2>
             {onClosePlayer && (
               <button
@@ -93,7 +95,12 @@ export const DetailContent: React.FC<DetailContentProps> = ({
             💬 Tình trạng: <b>{movie.episode_current || "Đang cập nhật"}</b>
           </div>
           <div className="fact">
-            🌐 Quốc gia: <b>{movie.country && movie.country.length > 0 ? movie.country.join(", ") : "Đang cập nhật"}</b>
+            🌐 Quốc gia:{" "}
+            <b>
+              {movie.country && movie.country.length > 0
+                ? movie.country.join(", ")
+                : "Đang cập nhật"}
+            </b>
           </div>
           {movie.director && movie.director.length > 0 && (
             <div className="fact" style={{ gridColumn: "1 / -1" }}>
@@ -107,18 +114,20 @@ export const DetailContent: React.FC<DetailContentProps> = ({
       {totalServers.length > 0 ? (
         <article className="panel" style={{ marginTop: 10 }} id="episodesPanel">
           <div className="panel-head">
-            <h2>Danh sách tập phim ({totalServers.reduce((acc, s) => acc + s.items.length, 0)} tập)</h2>
+            <h2>
+              Danh sách tập phim ({totalServers.reduce((acc, s) => acc + s.items.length, 0)} tập)
+            </h2>
           </div>
           <div className="episodes-container">
             {totalServers.map((server, srvIdx) => (
               <div key={srvIdx} className="server-group">
                 <div className="server-title">
-                  <span>▶</span> {server.server_name || `Máy chủ ${srvIdx + 1}`} ({server.items.length} tập):
+                  <span>▶</span> {server.server_name || `Máy chủ ${srvIdx + 1}`} (
+                  {server.items.length} tập):
                 </div>
                 <div className="episode-buttons">
                   {server.items.map((ep, epIdx) => {
-                    const isSelected =
-                      activeServerIndex === srvIdx && activeEpisodeIndex === epIdx;
+                    const isSelected = activeServerIndex === srvIdx && activeEpisodeIndex === epIdx;
                     return (
                       <button
                         key={ep.slug || epIdx}
@@ -148,7 +157,8 @@ export const DetailContent: React.FC<DetailContentProps> = ({
               fontSize: 13,
             }}
           >
-            Máy chủ chưa cập nhật danh sách tập phát sóng cho tựa phim này. Vui lòng chuyển nguồn phát để tìm máy chủ có sẵn.
+            Máy chủ chưa cập nhật danh sách tập phát sóng cho tựa phim này. Vui lòng chuyển nguồn
+            phát để tìm máy chủ có sẵn.
           </div>
         </article>
       )}

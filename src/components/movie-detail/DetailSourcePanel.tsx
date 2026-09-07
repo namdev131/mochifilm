@@ -58,8 +58,7 @@ export const DetailSourcePanel: React.FC<DetailSourcePanelProps> = ({
   movieSlug,
   onSelectSource,
 }) => {
-  const activeConfig =
-    SOURCES_CONFIG.find((s) => s.id === currentSource) || SOURCES_CONFIG[0];
+  const activeConfig = SOURCES_CONFIG.find((s) => s.id === currentSource) || SOURCES_CONFIG[0];
 
   return (
     <aside className="source-panel">

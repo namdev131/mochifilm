@@ -8,10 +8,7 @@ interface PlayerTopbarProps {
   onShowToast: (msg: string) => void;
 }
 
-export const PlayerTopbar: React.FC<PlayerTopbarProps> = ({
-  unreadCount = 0,
-  onShowToast,
-}) => {
+export const PlayerTopbar: React.FC<PlayerTopbarProps> = ({ unreadCount = 0, onShowToast }) => {
   const [searchVal, setSearchVal] = useState("");
   const [results, setResults] = useState<MovieCard[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -58,10 +55,7 @@ export const PlayerTopbar: React.FC<PlayerTopbarProps> = ({
   // Click outside and Escape key to close dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(e.target as Node)
-      ) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
       }
     };
@@ -144,7 +138,14 @@ export const PlayerTopbar: React.FC<PlayerTopbarProps> = ({
               onClick={handleClear}
               aria-label="Xóa tìm kiếm"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M18 6 6 18M6 6l12 12" />
               </svg>
             </button>
@@ -162,9 +163,7 @@ export const PlayerTopbar: React.FC<PlayerTopbarProps> = ({
           <div className="topbar-search-dropdown" role="region" aria-label="Gợi ý tìm kiếm">
             <div className="topbar-search-header">
               <span>Kết quả cho "{searchVal.trim()}"</span>
-              {isSearching && (
-                <span className="topbar-search-pulse">Đang tìm...</span>
-              )}
+              {isSearching && <span className="topbar-search-pulse">Đang tìm...</span>}
             </div>
 
             <div className="topbar-search-list">
@@ -191,13 +190,9 @@ export const PlayerTopbar: React.FC<PlayerTopbarProps> = ({
                     />
                     <div className="topbar-search-meta">
                       <h4 className="topbar-search-title">{item.name}</h4>
-                      <p className="topbar-search-origin">
-                        {item.origin_name || item.name}
-                      </p>
+                      <p className="topbar-search-origin">{item.origin_name || item.name}</p>
                       <div className="topbar-search-badges">
-                        {item.year && (
-                          <span className="topbar-search-badge">{item.year}</span>
-                        )}
+                        {item.year && <span className="topbar-search-badge">{item.year}</span>}
                         {item.quality && (
                           <span className="topbar-search-badge">{item.quality}</span>
                         )}
@@ -217,7 +212,14 @@ export const PlayerTopbar: React.FC<PlayerTopbarProps> = ({
                         title="Xem chi tiết"
                         aria-label={`Xem chi tiết phim ${item.name}`}
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
                           <circle cx="12" cy="12" r="10" />
                           <path d="M12 16v-4M12 8h.01" />
                         </svg>
@@ -241,9 +243,7 @@ export const PlayerTopbar: React.FC<PlayerTopbarProps> = ({
                 ))
               ) : (
                 <div className="topbar-search-empty">
-                  {isSearching
-                    ? "Đang quét máy chủ phim..."
-                    : "Không tìm thấy phim phù hợp"}
+                  {isSearching ? "Đang quét máy chủ phim..." : "Không tìm thấy phim phù hợp"}
                 </div>
               )}
             </div>
@@ -270,7 +270,11 @@ export const PlayerTopbar: React.FC<PlayerTopbarProps> = ({
         type="button"
         className="icon-btn"
         aria-label="Thông báo"
-        onClick={() => onShowToast(unreadCount > 0 ? `Bạn có ${unreadCount} thông báo mới` : "Chưa có thông báo mới")}
+        onClick={() =>
+          onShowToast(
+            unreadCount > 0 ? `Bạn có ${unreadCount} thông báo mới` : "Chưa có thông báo mới",
+          )
+        }
       >
         <svg width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />

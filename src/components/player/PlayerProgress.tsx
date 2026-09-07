@@ -117,9 +117,13 @@ export function PlayerProgress({
       <div className="progress-track">
         {/* Điểm đệm buffer */}
         <div className="progress-buffer" style={{ width: `${bufferedPercent}%` }} />
-        
+
         {/* Phần đã xem (Hồng gradient) */}
-        <div className="progress-played" id="progressPlayed" style={{ width: `${progressPercent}%` }} />
+        <div
+          className="progress-played"
+          id="progressPlayed"
+          style={{ width: `${progressPercent}%` }}
+        />
 
         {/* Các mốc chương phim (Chương - Chấm vàng hổ phách) */}
         {duration > 60 &&
@@ -145,4 +149,3 @@ export function PlayerProgress({
     </div>
   );
 }
-

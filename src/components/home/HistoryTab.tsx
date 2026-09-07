@@ -163,10 +163,12 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
         <div className="py-20 text-center space-y-3 bg-[#12121a]/50 rounded-3xl border border-white/[0.04]">
           <Film className="w-12 h-12 mx-auto text-zinc-600 stroke-[1.5]" />
           <h3 className="text-base font-bold text-zinc-300">
-            Chưa có lịch sử xem từ nguồn {selectedSource === "all" ? "máy chủ này" : selectedSource.toUpperCase()}
+            Chưa có lịch sử xem từ nguồn{" "}
+            {selectedSource === "all" ? "máy chủ này" : selectedSource.toUpperCase()}
           </h3>
           <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed">
-            Bạn có {continueList.length} tập phim đang xem dở từ nguồn khác. Chọn "Tất cả" để tiếp tục xem.
+            Bạn có {continueList.length} tập phim đang xem dở từ nguồn khác. Chọn "Tất cả" để tiếp
+            tục xem.
           </p>
           <button
             type="button"
@@ -181,7 +183,8 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
           <Clock className="w-12 h-12 mx-auto text-zinc-600 stroke-[1.5]" />
           <h3 className="text-base font-bold text-zinc-300">Chưa có lịch sử xem</h3>
           <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed">
-            Hệ thống không tạo tiến độ ảo. Lịch sử xem phim và tiến độ từng tập sẽ được ghi lại tự động khi bạn bắt đầu xem một tập phim bất kỳ.
+            Hệ thống không tạo tiến độ ảo. Lịch sử xem phim và tiến độ từng tập sẽ được ghi lại tự
+            động khi bạn bắt đầu xem một tập phim bất kỳ.
           </p>
           <button
             type="button"

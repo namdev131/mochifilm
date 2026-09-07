@@ -7,9 +7,7 @@ interface DetailTopbarProps {
   onShowToast?: (msg: string) => void;
 }
 
-export const DetailTopbar: React.FC<DetailTopbarProps> = ({
-  onShowToast,
-}) => {
+export const DetailTopbar: React.FC<DetailTopbarProps> = ({ onShowToast }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<MovieCard[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -69,10 +67,7 @@ export const DetailTopbar: React.FC<DetailTopbarProps> = ({
   // Click outside and Escape key to close dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(e.target as Node)
-      ) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
       }
     };
@@ -164,7 +159,14 @@ export const DetailTopbar: React.FC<DetailTopbarProps> = ({
               onClick={handleClear}
               aria-label="Xóa tìm kiếm"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M18 6 6 18M6 6l12 12" />
               </svg>
             </button>
@@ -182,9 +184,7 @@ export const DetailTopbar: React.FC<DetailTopbarProps> = ({
           <div className="topbar-search-dropdown" role="region" aria-label="Gợi ý tìm kiếm">
             <div className="topbar-search-header">
               <span>Kết quả cho "{searchTerm.trim()}"</span>
-              {isSearching && (
-                <span className="topbar-search-pulse">Đang tìm...</span>
-              )}
+              {isSearching && <span className="topbar-search-pulse">Đang tìm...</span>}
             </div>
 
             <div className="topbar-search-list">
@@ -211,13 +211,9 @@ export const DetailTopbar: React.FC<DetailTopbarProps> = ({
                     />
                     <div className="topbar-search-meta">
                       <h4 className="topbar-search-title">{item.name}</h4>
-                      <p className="topbar-search-origin">
-                        {item.origin_name || item.name}
-                      </p>
+                      <p className="topbar-search-origin">{item.origin_name || item.name}</p>
                       <div className="topbar-search-badges">
-                        {item.year && (
-                          <span className="topbar-search-badge">{item.year}</span>
-                        )}
+                        {item.year && <span className="topbar-search-badge">{item.year}</span>}
                         {item.quality && (
                           <span className="topbar-search-badge">{item.quality}</span>
                         )}
@@ -246,9 +242,7 @@ export const DetailTopbar: React.FC<DetailTopbarProps> = ({
                 ))
               ) : (
                 <div className="topbar-search-empty">
-                  {isSearching
-                    ? "Đang quét máy chủ phim..."
-                    : "Không tìm thấy phim phù hợp"}
+                  {isSearching ? "Đang quét máy chủ phim..." : "Không tìm thấy phim phù hợp"}
                 </div>
               )}
             </div>

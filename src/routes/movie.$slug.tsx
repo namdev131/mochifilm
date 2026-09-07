@@ -272,9 +272,7 @@ function MovieDetailPage() {
       {/* Main Content Area */}
       <main className="app">
         {/* Topbar */}
-        <DetailTopbar
-          onShowToast={triggerToast}
-        />
+        <DetailTopbar onShowToast={triggerToast} />
 
         {isLoading ? (
           <div
@@ -315,9 +313,11 @@ function MovieDetailPage() {
             <h2 style={{ fontSize: 18, marginBottom: 8, color: "#fff" }}>
               Không thể tải phim trên nguồn {currentSourceName}
             </h2>
-            <p style={{ color: "var(--muted)", fontSize: 12, maxWidth: 500, margin: "0 auto 20px" }}>
-              Máy chủ {currentSourceName} có thể chưa cập nhật tựa phim này hoặc đường truyền đang bận.
-              Vui lòng thử chuyển sang nguồn phim khác.
+            <p
+              style={{ color: "var(--muted)", fontSize: 12, maxWidth: 500, margin: "0 auto 20px" }}
+            >
+              Máy chủ {currentSourceName} có thể chưa cập nhật tựa phim này hoặc đường truyền đang
+              bận. Vui lòng thử chuyển sang nguồn phim khác.
             </p>
             <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
               {SOURCES.filter((s) => s.id !== currentSource).map((s) => (

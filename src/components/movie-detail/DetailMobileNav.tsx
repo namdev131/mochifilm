@@ -24,10 +24,7 @@ export const DetailMobileNav: React.FC<DetailMobileNavProps> = ({ onShowToast })
         <span>Phim</span>
       </Link>
 
-      <button
-        type="button"
-        onClick={() => onShowToast?.("Chức năng Watch Party sẵn sàng.")}
-      >
+      <button type="button" onClick={() => onShowToast?.("Chức năng Watch Party sẵn sàng.")}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M4 8h16v11H4z" />
           <path d="M8 5v6M16 5v6" />
@@ -42,10 +39,7 @@ export const DetailMobileNav: React.FC<DetailMobileNavProps> = ({ onShowToast })
         <span>Yêu thích</span>
       </Link>
 
-      <button
-        type="button"
-        onClick={() => onShowToast?.("Mở trang cá nhân & cài đặt")}
-      >
+      <button type="button" onClick={() => onShowToast?.("Mở trang cá nhân & cài đặt")}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="8" r="4" />
           <path d="M4 21c1.5-4 4.2-6 8-6s6.5 2 8 6" />

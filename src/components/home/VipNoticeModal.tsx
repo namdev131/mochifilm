@@ -33,12 +33,14 @@ export const VipNoticeModal: React.FC<VipNoticeModalProps> = ({ isOpen, onClose 
           <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
           <div className="text-xs text-amber-200/90 leading-relaxed">
             <span className="font-bold block text-amber-300 mb-0.5">Tính năng chưa khả dụng</span>
-            Hệ thống chưa kết nối cổng thanh toán và backend phân quyền người dùng. Hiện tại toàn bộ kho phim được xem miễn phí từ các nguồn mở.
+            Hệ thống chưa kết nối cổng thanh toán và backend phân quyền người dùng. Hiện tại toàn bộ
+            kho phim được xem miễn phí từ các nguồn mở.
           </div>
         </div>
 
         <p className="text-xs text-zinc-300 leading-relaxed">
-          Các tính năng VIP dự kiến: luồng phát 4K HDR tốc độ cao, phòng xem chung (Watch Party), và không quảng cáo. Chúng tôi sẽ thông báo ngay khi tích hợp hoàn chỉnh.
+          Các tính năng VIP dự kiến: luồng phát 4K HDR tốc độ cao, phòng xem chung (Watch Party), và
+          không quảng cáo. Chúng tôi sẽ thông báo ngay khi tích hợp hoàn chỉnh.
         </p>
 
         <button

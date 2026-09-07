@@ -43,7 +43,10 @@ export const DetailRecommendations: React.FC<DetailRecommendationsProps> = ({
               data-title={m.name}
               onClick={() => {
                 if (typeof window !== "undefined" && (window as any).MochiLoader?.showMovie) {
-                  (window as any).MochiLoader.showMovie(m.name || m.slug, m.source || currentSource);
+                  (window as any).MochiLoader.showMovie(
+                    m.name || m.slug,
+                    m.source || currentSource,
+                  );
                 }
                 onShowToast?.(`Mở chi tiết: ${m.name}`);
               }}
@@ -65,9 +68,7 @@ export const DetailRecommendations: React.FC<DetailRecommendationsProps> = ({
               </div>
               <div className="movie-info">
                 <h3>{m.name}</h3>
-                <p>
-                  {[m.year, m.episode_current || m.lang].filter(Boolean).join(" · ") || "Phim"}
-                </p>
+                <p>{[m.year, m.episode_current || m.lang].filter(Boolean).join(" · ") || "Phim"}</p>
               </div>
             </Link>
           ))}

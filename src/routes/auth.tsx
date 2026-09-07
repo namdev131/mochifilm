@@ -86,8 +86,21 @@ export function AuthPage() {
 
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
         if (error) throw error;
+
+        if (data?.user) {
+          const userObj = {
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "bạn",
+          };
+          localStorage.setItem("mochi_user", JSON.stringify(userObj));
+          window.dispatchEvent(new CustomEvent("mochi:user-changed", { detail: userObj }));
+        }
 
         showToastMsg("Đăng nhập thành công! ♡");
         setTimeout(() => {
@@ -106,6 +119,16 @@ export function AuthPage() {
         if (!data.session) {
           showToastMsg("Đã gửi email xác minh. Mở liên kết trong email để hoàn tất đăng ký.");
           return;
+        }
+
+        if (data.user) {
+          const userObj = {
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.user_metadata?.full_name || name.trim(),
+          };
+          localStorage.setItem("mochi_user", JSON.stringify(userObj));
+          window.dispatchEvent(new CustomEvent("mochi:user-changed", { detail: userObj }));
         }
 
         showToastMsg(`Đăng ký thành công! Chào mừng ${name.trim()} gia nhập Mochi Film ♡`);

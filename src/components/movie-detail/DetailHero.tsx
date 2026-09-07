@@ -31,7 +31,10 @@ export const DetailHero: React.FC<DetailHeroProps> = ({
   const ratingValue = hasRealRating ? Number((movie as any).vote_average).toFixed(1) : null;
 
   const cleanSummary = movie.content
-    ? movie.content.replace(/<[^>]*>?/gm, "").trim().slice(0, 280) + "..."
+    ? movie.content
+        .replace(/<[^>]*>?/gm, "")
+        .trim()
+        .slice(0, 280) + "..."
     : "Đang cập nhật thông tin tóm tắt nội dung bộ phim từ máy chủ nguồn...";
 
   return (
@@ -90,19 +93,17 @@ export const DetailHero: React.FC<DetailHeroProps> = ({
               id="watchNow"
               onClick={() => {
                 if (typeof window !== "undefined" && (window as any).MochiLoader?.showMovie) {
-                  (window as any).MochiLoader.showMovie(movie.name, currentSource || movie.source || "kkphim");
+                  (window as any).MochiLoader.showMovie(
+                    movie.name,
+                    currentSource || movie.source || "kkphim",
+                  );
                 }
                 onWatchNow?.();
               }}
             >
               ▶ Xem ngay
             </Link>
-            <button
-              type="button"
-              className="btn"
-              id="watchTrailer"
-              onClick={onWatchTrailer}
-            >
+            <button type="button" className="btn" id="watchTrailer" onClick={onWatchTrailer}>
               ▶ Xem trailer
             </button>
             <button
@@ -113,12 +114,7 @@ export const DetailHero: React.FC<DetailHeroProps> = ({
             >
               {isFavorite ? "♥ Đã yêu thích" : "♡ Yêu thích"}
             </button>
-            <button
-              type="button"
-              className="btn"
-              id="partyBtn"
-              onClick={onWatchParty}
-            >
+            <button type="button" className="btn" id="partyBtn" onClick={onWatchParty}>
               ♧ Watch Party
             </button>
           </div>

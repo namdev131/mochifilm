@@ -62,14 +62,14 @@ export const SourceSelectorModal: React.FC<SourceSelectorModalProps> = ({
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
               <div>
                 <p className="text-sm font-bold text-zinc-100">Tất cả nguồn (Gộp)</p>
-                <p className="text-[11px] text-zinc-400 font-mono">Tự động hợp nhất phim đa nguồn</p>
+                <p className="text-[11px] text-zinc-400 font-mono">
+                  Tự động hợp nhất phim đa nguồn
+                </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-xs font-mono font-bold text-emerald-400">
-                Auto-Merge
-              </span>
+              <span className="text-xs font-mono font-bold text-emerald-400">Auto-Merge</span>
               {selectedSource === "all" && (
                 <span className="px-2 py-0.5 rounded-md bg-pink-500 text-white text-[10px] font-bold">
                   ĐANG CHỌN
