@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const read = (file) => readFileSync(new URL("../" + file, import.meta.url), "utf8");
+const home = read("src/routes/index.tsx");
+const admin = read("src/routes/admin.tsx");
+assert.match(home, /user\?\.email\?\.toLowerCase\(\) === "lacviet55@proton.me"/);
+assert.match(home, /user\?\.app_metadata\?\.role === "admin"/);
+assert.match(home, /user\?\.app_metadata\?\.role === "deputy_admin"/);
+assert.match(home, /Dashboard admin/);
+assert.match(home, /navigate\(\{ to: "\/admin" \}\)/);
+assert.doesNotMatch(admin, /mochi_admin_preview|\[Chế độ xem\]/);
+assert.doesNotMatch(admin, /setUsers\(.*FALLBACK|setParties\(.*FALLBACK/);
+assert.match(admin, /user\.email\?\.toLowerCase\(\) === ADMIN_EMAIL/);
+assert.match(admin, /user\.app_metadata\?\.role === "admin"/);
+console.log("PASS: admin entry and fail-closed UI source contracts (not live authorization).");

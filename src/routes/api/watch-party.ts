@@ -37,7 +37,7 @@ create table if not exists public.admin_audit_log (
 );
 create table if not exists public.staff_permissions (
   user_id uuid not null references auth.users(id) on delete cascade,
-  permission text not null check(permission in ('watch_party.view','watch_party.warn','watch_party.close')),
+  permission text not null check(permission in ('users.view','users.manage','comments.view','comments.moderate','watch_party.view','watch_party.warn','watch_party.lock','watch_party.close','sources.view')),
   granted_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(), primary key(user_id,permission)
 );

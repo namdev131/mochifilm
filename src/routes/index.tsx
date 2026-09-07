@@ -2871,6 +2871,22 @@ export function HomePage() {
                       <span>Thông tin Mochi VIP</span>
                     </button>
 
+                    {(user?.email?.toLowerCase() === "lacviet55@proton.me" ||
+                      user?.app_metadata?.role === "admin" ||
+                      user?.app_metadata?.role === "deputy_admin") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          void navigate({ to: "/admin" });
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-pink-400 hover:text-white hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400 transition cursor-pointer"
+                      >
+                        <Crown className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>Dashboard admin</span>
+                      </button>
+                    )}
+
                     {currentUser && (
                       <div className="pt-1 mt-1 border-t border-white/[0.06]">
                         <button
