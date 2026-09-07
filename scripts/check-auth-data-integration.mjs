@@ -9,7 +9,8 @@ const users = read("convex/users.ts");
 const root = read("src/routes/__root.tsx");
 const loader = read("src/components/common/MochiLoadingScreen.tsx");
 
-assert(pkg.dependencies["@clerk/clerk-react"], "Clerk dependency missing");
+assert(pkg.dependencies["@supabase/supabase-js"], "Supabase dependency missing");
+assert(!pkg.dependencies["@clerk/clerk-react"], "Clerk dependency must be removed");
 assert.doesNotMatch(
   loader,
   /hasShownInitialWebLoading/,
@@ -17,17 +18,15 @@ assert.doesNotMatch(
 );
 assert(
   root.indexOf("</AuthDataProvider>") < root.indexOf("<MochiLoadingScreen />"),
-  "Initial loader must not depend on Clerk initialization",
+  "Initial loader must not depend on auth initialization",
 );
 assert(pkg.dependencies.convex, "Convex dependency missing");
-assert.match(provider, /ConvexProviderWithClerk/, "Convex is not using Clerk auth");
-assert.match(auth, /id="clerk-captcha"/, "Clerk CAPTCHA mount point missing from sign-up form");
-assert.doesNotMatch(
-  auth,
-  /localStorage\.setItem\("mochi_user"/,
-  "Clerk identity must not be duplicated in localStorage",
-);
+assert.match(provider, /ConvexProviderWithAuth/, "Convex is not using Supabase auth");
+assert.match(provider, /onAuthStateChange/, "Supabase session changes are not observed");
+assert.match(auth, /signInWithPassword/, "Supabase password login missing");
+assert.match(auth, /signUp/, "Supabase registration missing");
+assert.doesNotMatch(auth, /clerk|Clerk/, "Clerk code remains in auth route");
 assert.match(users, /getUserIdentity\(\)/, "Convex user sync must derive identity server-side");
-assert.match(users, /by_clerk_id/, "Convex user records must be keyed by Clerk identity");
+assert.match(users, /by_clerk_id/, "Convex user records must be keyed by auth identity");
 
-console.log("Clerk auth + Convex data contract passed");
+console.log("Supabase auth + Convex data contract passed");

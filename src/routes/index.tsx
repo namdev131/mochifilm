@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useMemo, useRef, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useClerk, useUser } from "@clerk/clerk-react";
+import { useAppAuth } from "@/lib/auth-data-provider";
 import { useMutation, useQuery as useConvexQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { VipNoticeModal } from "@/components/home/VipNoticeModal";
@@ -346,8 +346,7 @@ async function fetchCategoryMoviesFromApi(
 export function HomePage() {
   const searchParams = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { signOut } = useClerk();
-  const { user } = useUser();
+  const { user, signOut } = useAppAuth();
   const syncUser = useMutation(api.users.syncCurrent);
   const convexHistory = useConvexQuery(api.watchHistory.list, user ? {} : "skip");
   const convexNotifications = useConvexQuery(api.notifications.list, user ? {} : "skip");
@@ -373,7 +372,7 @@ export function HomePage() {
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
 
   const currentUser = user
-    ? { email: user.primaryEmailAddress?.emailAddress, name: user.fullName || user.firstName || "Thành viên Mochi" }
+    ? { email: user.email, name: user.user_metadata.full_name || user.email?.split("@")[0] || "Thành viên Mochi" }
     : null;
 
   // Real Hero Detail from API

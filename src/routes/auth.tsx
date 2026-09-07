@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useSignIn, useSignUp } from "@clerk/clerk-react";
+import { supabase } from "@/lib/auth-data-provider";
 import "@/styles/auth.css";
 
 interface AuthSearchParams {
@@ -19,8 +19,6 @@ export const Route = createFileRoute("/auth")({
 export function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { signIn, setActive: setActiveSignIn } = useSignIn();
-  const { signUp, setActive: setActiveSignUp } = useSignUp();
 
   const [mode, setMode] = useState<"login" | "register">(search.mode || "login");
   const [name, setName] = useState("");
@@ -31,8 +29,7 @@ export function AuthPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [agreedTerms, setAgreedTerms] = useState(false);
-  const [awaitingVerification, setAwaitingVerification] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ show: boolean; msg: string }>({ show: false, msg: "" });
@@ -53,7 +50,6 @@ export function AuthPage() {
   };
 
   const validate = (): boolean => {
-    if (awaitingVerification) return /^\d{6}$/.test(verificationCode.trim());
     const errs: Record<string, string> = {};
 
     if (mode === "register" && !name.trim()) {
@@ -89,48 +85,38 @@ export function AuthPage() {
     setIsLoading(true);
 
     try {
-      if (awaitingVerification) {
-        if (!signUp) throw new Error("Clerk chưa sẵn sàng");
-        const result = await signUp.attemptEmailAddressVerification({
-          code: verificationCode.trim(),
-        });
-        if (result.status !== "complete") throw new Error("Mã xác minh chưa hoàn tất");
-        await setActiveSignUp({ session: result.createdSessionId });
-        navigate({ to: search.redirect || "/" });
-        return;
-      }
       if (mode === "login") {
-        if (!signIn) throw new Error("Clerk chưa sẵn sàng");
-        const result = await signIn.create({ identifier: email.trim(), password });
-        if (result.status !== "complete") throw new Error("Cần thêm bước xác thực trong Clerk");
-        await setActiveSignIn({ session: result.createdSessionId });
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) throw error;
 
         showToastMsg("Đăng nhập thành công! ♡");
         setTimeout(() => {
           navigate({ to: search.redirect || "/" });
         }, 800);
       } else {
-        if (!signUp) throw new Error("Clerk chưa sẵn sàng");
-        const result = await signUp.create({
-          emailAddress: email.trim(),
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
           password,
-          firstName: name.trim(),
+          options: {
+            data: { full_name: name.trim() },
+            emailRedirectTo: `${window.location.origin}${search.redirect || "/"}`,
+          },
         });
-        if (result.status !== "complete") {
-          await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-          setAwaitingVerification(true);
-          showToastMsg("Clerk đã gửi mã xác minh email. Hoàn tất xác minh để đăng nhập.");
+        if (error) throw error;
+        if (!data.session) {
+          showToastMsg("Đã gửi email xác minh. Mở liên kết trong email để hoàn tất đăng ký.");
           return;
         }
-        await setActiveSignUp({ session: result.createdSessionId });
 
         showToastMsg(`Đăng ký thành công! Chào mừng ${name.trim()} gia nhập Mochi Film ♡`);
         setTimeout(() => {
           navigate({ to: search.redirect || "/" });
         }, 1000);
       }
-    } catch {
-      showToastMsg("Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.");
+    } catch (error) {
+      showToastMsg(
+        error instanceof Error ? error.message : "Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -138,12 +124,11 @@ export function AuthPage() {
 
   const handleOAuth = async (provider: "google" | "facebook") => {
     try {
-      if (!signIn) throw new Error("Clerk chưa sẵn sàng");
-      await signIn.authenticateWithRedirect({
-        strategy: provider === "google" ? "oauth_google" : "oauth_facebook",
-        redirectUrl: "/auth",
-        redirectUrlComplete: search.redirect || "/",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}${search.redirect || "/"}` },
       });
+      if (error) throw error;
     } catch (error) {
       showToastMsg(error instanceof Error ? error.message : `Đăng nhập với ${provider} thất bại.`);
     }
@@ -160,8 +145,10 @@ export function AuthPage() {
     }
 
     try {
-      if (!signIn) throw new Error("Clerk chưa sẵn sàng");
-      await signIn.create({ strategy: "reset_password_email_code", identifier: email.trim() });
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      if (error) throw error;
       showToastMsg(`Đã gửi mã khôi phục mật khẩu đến ${email.trim()}!`);
     } catch {
       showToastMsg("Không thể gửi yêu cầu đặt lại mật khẩu lúc này.");
@@ -170,8 +157,6 @@ export function AuthPage() {
 
   const switchMode = (newMode: "login" | "register") => {
     setMode(newMode);
-    setAwaitingVerification(false);
-    setVerificationCode("");
     setErrors({});
   };
 
@@ -266,20 +251,8 @@ export function AuthPage() {
           </p>
 
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
-            {awaitingVerification && (
-              <div className="auth-field">
-                <input
-                  id="verificationCode"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  placeholder="Mã xác minh email gồm 6 số"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                />
-              </div>
-            )}
             {/* Họ và tên (chỉ hiển thị khi Đăng ký) */}
-            {mode === "register" && !awaitingVerification && (
+            {mode === "register" && (
               <div className={`auth-field ${errors.name ? "invalid" : ""}`}>
                 <svg
                   className="auth-field-icon"
@@ -465,17 +438,10 @@ export function AuthPage() {
             {mode === "register" && errors.terms && (
               <div className="auth-field-error -mt-1 mb-1">{errors.terms}</div>
             )}
-            {mode === "register" && !awaitingVerification && <div id="clerk-captcha" />}
 
             {/* Nút Submit */}
             <button id="submitBtn" type="submit" disabled={isLoading} className="auth-submit">
-              <span>
-                {awaitingVerification
-                  ? "Xác minh email →"
-                  : mode === "login"
-                    ? "Đăng nhập →"
-                    : "Đăng ký tài khoản →"}
-              </span>
+              <span>{mode === "login" ? "Đăng nhập →" : "Đăng ký tài khoản →"}</span>
               {isLoading && <span className="inline-block animate-spin ml-2">↻</span>}
             </button>
 
