@@ -47,6 +47,10 @@ assert(controlsCode.includes("hasHls"), "LỖI: resolveStreamSource phải trả
 assert(controlsCode.includes("hasEmbed"), "LỖI: resolveStreamSource phải trả về hasEmbed");
 assert(controlsCode.includes("autoPlay"), "LỖI: Video phải bật autoplay");
 assert(
+  /import React, \{[^}]*useCallback[^}]*\} from "react";/.test(controlsCode),
+  "LỖI: PlayerControls dùng useCallback nhưng chưa import",
+);
+assert(
   controlsCode.includes("attemptAutoPlay"),
   "LỖI: HLS/MP4 phải thử phát sau khi nguồn sẵn sàng",
 );

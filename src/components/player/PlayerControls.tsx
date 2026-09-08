@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import Hls from "hls.js";
 import {
