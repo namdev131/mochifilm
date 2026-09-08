@@ -70,15 +70,8 @@ export const DetailHero: React.FC<DetailHeroProps> = ({
                 ★ {ratingValue} / 10 · {movie.metadata_provider || "Nguồn phim"}
               </span>
             )}
-            {movie.metadata_url && (
-              <a
-                href={movie.metadata_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="tag"
-              >
-                Dữ liệu: {movie.metadata_provider}
-              </a>
+            {movie.metadata_provider && (
+              <span className="tag">Dữ liệu: {movie.metadata_provider}</span>
             )}
             {movie.year && <span className="tag">{movie.year}</span>}
             {movie.time && <span className="tag">{movie.time}</span>}
@@ -93,6 +86,22 @@ export const DetailHero: React.FC<DetailHeroProps> = ({
           </div>
 
           <p>{cleanSummary}</p>
+
+          {movie.metadata_provider && (
+            <details open className="panel" style={{ marginBottom: 16, overflowWrap: "anywhere" }}>
+              <summary style={{ padding: 12, cursor: "pointer" }}>
+                Thông tin phim · {movie.metadata_provider}
+              </summary>
+              <div className="panel-body">
+                <p>
+                  Điểm {movie.metadata_provider}:{" "}
+                  <b>{ratingValue ? `${ratingValue} / 10` : "Chưa có điểm"}</b>
+                </p>
+                <p>Diễn viên: {movie.actors?.join(", ") || "Đang cập nhật"}</p>
+                <p>Đạo diễn: {movie.director?.join(", ") || "Đang cập nhật"}</p>
+              </div>
+            </details>
+          )}
 
           <div className="hero-actions">
             <Link
