@@ -1,10 +1,11 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import {
-  Copy,
   Lock,
   MessageCircle,
   RefreshCw,
+  QrCode,
   Send,
+  Share2,
   Settings,
   ShieldCheck,
   Unlock,
@@ -20,12 +21,14 @@ type Room = {
   host_id: string;
   join_locked: boolean;
   is_host: boolean;
+  is_admin: boolean;
 };
 
 type Member = {
   user_id: string;
   display_name: string;
   joined_at: string;
+  staff_role?: "admin" | "deputy_admin" | "member";
 };
 
 type Message = {
@@ -54,6 +57,10 @@ export function WatchPartyRoomPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [userId, setUserId] = useState("");
+  const [qrOpen, setQrOpen] = useState(false);
+  const [notice, setNotice] = useState("");
+  const knownMessageIds = useRef<Set<string> | null>(null);
+  const knownMemberIds = useRef<Set<string> | null>(null);
 
   const request = useCallback(async (body: Record<string, unknown>) => {
     const session = (await supabase.auth.getSession()).data.session;
@@ -82,14 +89,30 @@ export function WatchPartyRoomPanel({
         request({ action: "members-list", partyId: current.id }),
         request({ action: "chat-list", partyId: current.id }),
       ]);
+      const nextMembers = (memberResult.members || []) as Member[];
+      const nextMessages = (chatResult.messages || []) as Message[];
+      const adminJoined = nextMembers.find(
+        (member) => member.staff_role === "admin" && !knownMemberIds.current?.has(member.user_id),
+      );
+      const incomingAdmin = nextMessages.findLast(
+        (message) =>
+          message.staff_role === "admin" &&
+          message.user_id !== userId &&
+          !knownMessageIds.current?.has(message.id),
+      );
+      if (knownMemberIds.current && adminJoined) setNotice("Admin đã vào phòng");
+      else if (knownMessageIds.current && incomingAdmin)
+        setNotice(`${incomingAdmin.display_name}: ${incomingAdmin.content.slice(0, 80)}`);
+      knownMemberIds.current = new Set(nextMembers.map((member) => member.user_id));
+      knownMessageIds.current = new Set(nextMessages.map((message) => message.id));
       setRoom(current);
-      setMembers(memberResult.members || []);
-      setMessages(chatResult.messages || []);
+      setMembers(nextMembers);
+      setMessages(nextMessages);
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không thể tải phòng");
     }
-  }, [partyCode, request]);
+  }, [partyCode, request, userId]);
 
   useEffect(() => {
     void load();
@@ -104,6 +127,19 @@ export function WatchPartyRoomPanel({
     const timer = window.setInterval(heartbeat, 30_000);
     return () => window.clearInterval(timer);
   }, [request, room?.id, room?.is_host]);
+
+  useEffect(() => {
+    if (!qrOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => event.key === "Escape" && setQrOpen(false);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [qrOpen]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 4500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   const sendMessage = async (event: FormEvent) => {
     event.preventDefault();
@@ -152,7 +188,15 @@ export function WatchPartyRoomPanel({
     }
   };
 
-  const copyInvite = async () => {
+  const shareInvite = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `Watch Party ${partyCode}`, url: window.location.href });
+        return;
+      } catch (cause) {
+        if (cause instanceof DOMException && cause.name === "AbortError") return;
+      }
+    }
     try {
       await navigator.clipboard.writeText(window.location.href);
       onShowToast("Đã sao chép liên kết mời");
@@ -161,165 +205,216 @@ export function WatchPartyRoomPanel({
     }
   };
 
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(typeof window === "undefined" ? "" : window.location.href)}`;
+
   return (
-    <aside
-      className="rightbar watch-party-room-panel"
-      aria-label={`Phòng Watch Party ${partyCode}`}
-    >
-      <header className="watch-party-room-head">
-        <div>
-          <span>Watch Party</span>
-          <strong>{partyCode}</strong>
-        </div>
-        <button type="button" onClick={() => void copyInvite()} aria-label="Sao chép liên kết mời">
-          <Copy />
-        </button>
-      </header>
+    <>
+      <aside
+        className="rightbar watch-party-room-panel"
+        aria-label={`Phòng Watch Party ${partyCode}`}
+      >
+        {notice && (
+          <div className="watch-party-admin-notice" role="status" aria-live="polite">
+            <ShieldCheck />
+            <span>{notice}</span>
+            <button type="button" onClick={() => setNotice("")} aria-label="Đóng thông báo">
+              <X />
+            </button>
+          </div>
+        )}
+        <header className="watch-party-room-head">
+          <div>
+            <span>Watch Party</span>
+            <strong>{partyCode}</strong>
+          </div>
+        </header>
 
-      <div className="watch-party-qr">
-        <img
-          src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(typeof window === "undefined" ? "" : window.location.href)}`}
-          alt="QR tham gia Watch Party"
-        />
-        <span>Quét QR để tham gia phòng</span>
-      </div>
-
-      <div className="watch-party-tabs" role="tablist" aria-label="Thông tin phòng">
-        <button
-          type="button"
-          className={tab === "chat" ? "active" : ""}
-          onClick={() => setTab("chat")}
-        >
-          <MessageCircle />
-          Trò chuyện
-        </button>
-        <button
-          type="button"
-          className={tab === "members" ? "active" : ""}
-          onClick={() => setTab("members")}
-        >
-          <Users />
-          Thành viên
-        </button>
-        <button
-          type="button"
-          className={tab === "rules" ? "active" : ""}
-          onClick={() => setTab("rules")}
-        >
-          <ShieldCheck />
-          Quy tắc
-        </button>
-        <button
-          type="button"
-          className={tab === "settings" ? "active" : ""}
-          onClick={() => setTab("settings")}
-        >
-          <Settings />
-          Cài đặt
-        </button>
-      </div>
-
-      {error ? (
-        <div className="watch-party-room-error" role="alert">
-          <p>{error}</p>
-          <button type="button" onClick={() => void load()}>
-            <RefreshCw /> Thử lại
+        <div className="watch-party-invite-actions">
+          <button type="button" onClick={() => void shareInvite()}>
+            <Share2 /> Chia sẻ phòng
+          </button>
+          <button type="button" onClick={() => setQrOpen(true)}>
+            <QrCode /> Quét QR
           </button>
         </div>
-      ) : tab === "chat" ? (
-        <div className="watch-party-chat">
-          <div className="watch-party-messages" aria-live="polite">
-            {!messages.length && (
-              <p className="watch-party-empty">Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện.</p>
-            )}
-            {messages.map((message) => (
-              <article key={message.id} className={message.user_id === userId ? "mine" : ""}>
+
+        <div className="watch-party-tabs" role="tablist" aria-label="Thông tin phòng">
+          <button
+            type="button"
+            className={tab === "chat" ? "active" : ""}
+            onClick={() => setTab("chat")}
+          >
+            <MessageCircle />
+            Trò chuyện
+          </button>
+          <button
+            type="button"
+            className={tab === "members" ? "active" : ""}
+            onClick={() => setTab("members")}
+          >
+            <Users />
+            Thành viên
+          </button>
+          <button
+            type="button"
+            className={tab === "rules" ? "active" : ""}
+            onClick={() => setTab("rules")}
+          >
+            <ShieldCheck />
+            Quy tắc
+          </button>
+          <button
+            type="button"
+            className={tab === "settings" ? "active" : ""}
+            onClick={() => setTab("settings")}
+          >
+            <Settings />
+            Cài đặt
+          </button>
+        </div>
+
+        {error ? (
+          <div className="watch-party-room-error" role="alert">
+            <p>{error}</p>
+            <button type="button" onClick={() => void load()}>
+              <RefreshCw /> Thử lại
+            </button>
+          </div>
+        ) : tab === "chat" ? (
+          <div className="watch-party-chat">
+            <div className="watch-party-messages" aria-live="polite">
+              {!messages.length && (
+                <p className="watch-party-empty">Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện.</p>
+              )}
+              {messages.map((message) => (
+                <article
+                  key={message.id}
+                  className={[
+                    message.user_id === userId ? "mine" : "",
+                    message.staff_role === "admin" ? "watch-party-message-admin" : "",
+                    message.staff_role === "deputy_admin" ? "watch-party-message-deputy" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <span className="watch-party-avatar">
+                    <UserRound />
+                  </span>
+                  <div>
+                    <header>
+                      <strong>{message.display_name}</strong>
+                      {message.staff_role !== "member" && (
+                        <b>{message.staff_role === "admin" ? "ADMIN" : "PHÓ ADMIN"}</b>
+                      )}
+                      <time>
+                        {new Date(message.created_at).toLocaleTimeString("vi-VN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </time>
+                    </header>
+                    <p>{message.content}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <form onSubmit={sendMessage} className="watch-party-composer">
+              <label htmlFor="party-chat-input">Tin nhắn</label>
+              <div>
+                <input
+                  id="party-chat-input"
+                  value={draft}
+                  maxLength={500}
+                  onChange={(event) => setDraft(event.target.value)}
+                  placeholder="Nhập tin nhắn..."
+                />
+                <button type="submit" disabled={busy || !draft.trim()} aria-label="Gửi tin nhắn">
+                  <Send />
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : tab === "members" ? (
+          <div className="watch-party-member-list">
+            {!members.length && <p className="watch-party-empty">Đang tải thành viên...</p>}
+            {members.map((member) => (
+              <article
+                key={member.user_id}
+                className={member.staff_role === "admin" ? "watch-party-member-admin" : ""}
+              >
                 <span className="watch-party-avatar">
                   <UserRound />
                 </span>
                 <div>
-                  <header>
-                    <strong>{message.display_name}</strong>
-                    {message.staff_role !== "member" && (
-                      <b>{message.staff_role === "admin" ? "ADMIN" : "PHÓ ADMIN"}</b>
-                    )}
-                    <time>
-                      {new Date(message.created_at).toLocaleTimeString("vi-VN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </time>
-                  </header>
-                  <p>{message.content}</p>
+                  <strong>{member.display_name}</strong>
+                  <small>{member.user_id === room?.host_id ? "Chủ phòng" : "Đang xem"}</small>
                 </div>
+                {member.staff_role === "admin" ? (
+                  <b>ADMIN</b>
+                ) : member.user_id === room?.host_id ? (
+                  <b>HOST</b>
+                ) : null}
               </article>
             ))}
           </div>
-          <form onSubmit={sendMessage} className="watch-party-composer">
-            <label htmlFor="party-chat-input">Tin nhắn</label>
+        ) : tab === "rules" ? (
+          <div className="watch-party-rules">
+            <img src="/assets/mochi/watch-party-rules.jpg" alt="Nội quy cộng đồng Watch Party" />
+          </div>
+        ) : (
+          <div className="watch-party-settings">
             <div>
-              <input
-                id="party-chat-input"
-                value={draft}
-                maxLength={500}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Nhập tin nhắn..."
-              />
-              <button type="submit" disabled={busy || !draft.trim()} aria-label="Gửi tin nhắn">
-                <Send />
-              </button>
-            </div>
-          </form>
-        </div>
-      ) : tab === "members" ? (
-        <div className="watch-party-member-list">
-          {!members.length && <p className="watch-party-empty">Đang tải thành viên...</p>}
-          {members.map((member) => (
-            <article key={member.user_id}>
-              <span className="watch-party-avatar">
-                <UserRound />
+              <span>
+                <strong>Quyền tham gia</strong>
+                <small>{room?.join_locked ? "Phòng đang khóa" : "Phòng đang mở"}</small>
               </span>
-              <div>
-                <strong>{member.display_name}</strong>
-                <small>{member.user_id === room?.host_id ? "Chủ phòng" : "Đang xem"}</small>
-              </div>
-              {member.user_id === room?.host_id && <b>HOST</b>}
-            </article>
-          ))}
-        </div>
-      ) : tab === "rules" ? (
-        <div className="watch-party-rules">
-          <img src="/assets/mochi/watch-party-rules.jpg" alt="Nội quy cộng đồng Watch Party" />
-        </div>
-      ) : (
-        <div className="watch-party-settings">
-          <div>
-            <span>
-              <strong>Quyền tham gia</strong>
-              <small>{room?.join_locked ? "Phòng đang khóa" : "Phòng đang mở"}</small>
-            </span>
-            {room?.is_host ? (
-              <button type="button" disabled={busy} onClick={() => void setLocked()}>
-                {room.join_locked ? <Unlock /> : <Lock />}
-                {room.join_locked ? "Mở khóa" : "Khóa phòng"}
+              {room?.is_host ? (
+                <button type="button" disabled={busy} onClick={() => void setLocked()}>
+                  {room.join_locked ? <Unlock /> : <Lock />}
+                  {room.join_locked ? "Mở khóa" : "Khóa phòng"}
+                </button>
+              ) : (
+                <b>{room?.join_locked ? "Đã khóa" : "Đang mở"}</b>
+              )}
+            </div>
+            {(room?.is_host || room?.is_admin) && (
+              <button
+                type="button"
+                className="watch-party-close"
+                disabled={busy}
+                onClick={() => void closeRoom()}
+              >
+                <X />
+                {room.is_admin && !room.is_host ? "Admin đóng phòng" : "Đóng phòng"}
               </button>
-            ) : (
-              <b>{room?.join_locked ? "Đã khóa" : "Đang mở"}</b>
             )}
           </div>
-          {room?.is_host && (
+        )}
+      </aside>
+
+      {qrOpen && (
+        <div className="watch-party-qr-backdrop" onClick={() => setQrOpen(false)}>
+          <div
+            className="watch-party-qr-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="watch-party-qr-title"
+            onClick={(event) => event.stopPropagation()}
+          >
             <button
               type="button"
-              className="watch-party-close"
-              disabled={busy}
-              onClick={() => void closeRoom()}
+              className="watch-party-qr-close"
+              onClick={() => setQrOpen(false)}
+              aria-label="Đóng mã QR"
             >
               <X />
-              Đóng phòng
             </button>
-          )}
+            <strong id="watch-party-qr-title">Quét QR để tham gia phòng</strong>
+            <img src={qrUrl} alt={`QR tham gia phòng ${partyCode}`} />
+            <span>{partyCode}</span>
+          </div>
         </div>
       )}
-    </aside>
+    </>
   );
 }

@@ -45,6 +45,11 @@ assert(controlsCode.includes("toggleStreamMode"), "LỖI: Thiếu hàm toggleStr
 assert(controlsCode.includes("stream-mode-btn"), "LỖI: Thiếu nút stream-mode-btn trên topbar");
 assert(controlsCode.includes("hasHls"), "LỖI: resolveStreamSource phải trả về hasHls");
 assert(controlsCode.includes("hasEmbed"), "LỖI: resolveStreamSource phải trả về hasEmbed");
+assert(controlsCode.includes("autoPlay"), "LỖI: Video phải bật autoplay");
+assert(
+  controlsCode.includes("attemptAutoPlay"),
+  "LỖI: HLS/MP4 phải thử phát sau khi nguồn sẵn sàng",
+);
 console.log("   ✓ Wiring PlayerControls hoàn chỉnh.");
 
 // 4. Kiểm tra route watch.$slug.tsx

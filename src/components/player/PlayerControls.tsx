@@ -305,6 +305,14 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
     setUseEmbedFallback(false);
   }, [activeEpisode?.slug, activeEpisode?.name, activeStreamUrl]);
 
+  const attemptAutoPlay = useCallback((video: HTMLVideoElement) => {
+    void video.play().catch(() => {
+      video.muted = true;
+      setIsMuted(true);
+      void video.play().catch(() => {});
+    });
+  }, []);
+
   // Quản lý vòng đời phát video: HLS (hls.js / native HLS) hoặc MP4 trực tiếp
   useEffect(() => {
     const video = videoRef.current;
@@ -337,6 +345,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
       }
       video.src = activePlayUrl;
       video.load();
+      video.addEventListener("canplay", () => attemptAutoPlay(video), { once: true });
       return;
     }
 
@@ -384,6 +393,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
             video.currentTime = initialPosition;
             setCurrentTime(initialPosition);
           }
+          attemptAutoPlay(video);
         });
 
         hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => setQualityLevel(data.level));
@@ -422,6 +432,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
             video.currentTime = initialPosition;
             setCurrentTime(initialPosition);
           }
+          attemptAutoPlay(video);
         };
         video.addEventListener("loadedmetadata", handleMeta, { once: true });
         const handleError = () => {
@@ -441,7 +452,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
         hlsRef.current = null;
       }
     };
-  }, [streamType, activePlayUrl, fallbackEmbedUrl, initialPosition]);
+  }, [streamType, activePlayUrl, fallbackEmbedUrl, initialPosition, attemptAutoPlay]);
 
   const formatTime = (secs: number) => {
     if (!isFinite(secs) || isNaN(secs)) return "00:00";
@@ -881,6 +892,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
           <video
             id="video"
             ref={videoRef}
+            autoPlay
             preload="metadata"
             playsInline
             poster={movie.thumb || movie.poster}

@@ -34,10 +34,61 @@
 }
 
 .player-page-root .watch-party-room-panel {
+  position: relative;
   border: 1px solid rgba(255, 91, 138, 0.2);
   border-radius: 18px;
   background: linear-gradient(180deg, rgba(27, 17, 25, 0.98), rgba(13, 9, 13, 0.98));
   overflow: hidden;
+}
+
+.player-page-root .watch-party-admin-notice {
+  position: absolute;
+  z-index: 4;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  min-height: 44px;
+  padding: 9px 10px;
+  display: grid;
+  grid-template-columns: 22px 1fr 26px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 209, 102, 0.38);
+  border-radius: 13px;
+  color: #fff4cf;
+  background: rgba(39, 25, 20, 0.96);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  font-size: 10px;
+  font-weight: 800;
+  animation: watch-party-notice-in 180ms ease-out;
+}
+.player-page-root .watch-party-admin-notice > svg {
+  width: 18px;
+  color: #ffd166;
+}
+.player-page-root .watch-party-admin-notice button {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+}
+.player-page-root .watch-party-admin-notice button svg {
+  width: 14px;
+}
+@keyframes watch-party-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .player-page-root .watch-party-admin-notice {
+    animation: none;
+  }
 }
 
 .player-page-root .watch-party-room-head {
@@ -66,35 +117,94 @@
   letter-spacing: 0.16em;
   color: #ff82a7;
 }
-.player-page-root .watch-party-room-head button {
-  width: 38px;
-  height: 38px;
+.player-page-root .watch-party-invite-actions {
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.player-page-root .watch-party-invite-actions button {
+  min-height: 40px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.04);
-  cursor: pointer;
-}
-.player-page-root .watch-party-room-head svg {
-  width: 16px;
-}
-.player-page-root .watch-party-qr {
-  padding: 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  border-bottom: 1px solid var(--line);
-  color: #bfaeb8;
-  font-size: 9px;
+  justify-content: center;
+  gap: 7px;
+  color: #f4e8ee;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 10px;
   font-weight: 800;
+  cursor: pointer;
 }
-.player-page-root .watch-party-qr img {
-  width: 64px;
-  height: 64px;
-  padding: 4px;
-  border-radius: 8px;
+.player-page-root .watch-party-invite-actions button:hover {
+  border-color: rgba(255, 91, 138, 0.42);
+  background: rgba(255, 91, 138, 0.1);
+}
+.player-page-root .watch-party-invite-actions svg {
+  width: 16px;
+  height: 16px;
+}
+
+.watch-party-qr-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(8, 5, 8, 0.82);
+  backdrop-filter: blur(8px);
+}
+.watch-party-qr-dialog {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 28px;
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  border: 1px solid rgba(255, 91, 138, 0.32);
+  border-radius: 22px;
+  color: #fff;
+  background: #1b1119;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+.watch-party-qr-dialog > strong {
+  padding-right: 24px;
+  font-size: 16px;
+  text-align: center;
+}
+.watch-party-qr-dialog > img {
+  width: min(320px, 76vw);
+  height: min(320px, 76vw);
+  padding: 10px;
+  border-radius: 16px;
   background: #fff;
+}
+.watch-party-qr-dialog > span {
+  color: #ff82a7;
+  font-family: monospace;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+.watch-party-qr-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+.watch-party-qr-close svg {
+  width: 17px;
 }
 
 .player-page-root .watch-party-tabs {
@@ -214,6 +324,26 @@
   border: 1px solid rgba(255, 91, 138, 0.14);
   background: rgba(255, 91, 138, 0.1);
 }
+.player-page-root .watch-party-messages article.watch-party-message-admin {
+  padding: 9px;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.1), rgba(255, 91, 138, 0.1));
+}
+.player-page-root .watch-party-messages article.watch-party-message-admin .watch-party-avatar {
+  color: #2a0b15;
+  border-color: #ffd166;
+  background: linear-gradient(135deg, #ffd166, #ff8eae);
+}
+.player-page-root .watch-party-messages article.watch-party-message-admin header b {
+  color: #25150a;
+  background: #ffd166;
+  box-shadow: 0 0 12px rgba(255, 209, 102, 0.25);
+}
+.player-page-root .watch-party-messages article.watch-party-message-admin p {
+  border: 1px solid rgba(255, 209, 102, 0.18);
+  background: rgba(255, 209, 102, 0.08);
+}
 .player-page-root .watch-party-empty {
   padding: 26px 10px !important;
   background: transparent !important;
@@ -298,6 +428,16 @@
 .player-page-root .watch-party-member-list b {
   color: #ff91b0;
   font-size: 8px;
+}
+.player-page-root .watch-party-member-list article.watch-party-member-admin {
+  margin: 4px 0;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 209, 102, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 209, 102, 0.06);
+}
+.player-page-root .watch-party-member-list article.watch-party-member-admin b {
+  color: #ffd166;
 }
 
 .player-page-root .watch-party-settings {

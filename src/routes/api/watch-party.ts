@@ -247,7 +247,7 @@ async function joinParty(user: CurrentUser, body: Record<string, unknown>) {
       await client.query("rollback");
       return json({ error: "Phòng đang khóa người tham gia mới" }, 403);
     }
-    if (party.password_hash && party.host_id !== user.id && !member.rowCount) {
+    if (party.password_hash && party.host_id !== user.id && !member.rowCount && !isAdmin(user)) {
       const supplied = password(body.password);
       if (!supplied || !(await verifyPassword(supplied, party.password_hash))) {
         await client.query("rollback");
@@ -322,12 +322,12 @@ async function handler(request: Request) {
     const body = (await request.json()) as Record<string, unknown>;
     if (body.action === "list") {
       const { rows } = await db().query(
-        `select p.id,p.code,p.host_id,p.slug,p.source,p.name,p.poster,p.ep_index,p.srv_index,p.join_locked,p.scheduled_at,(p.host_id=$1) as is_host,
+        `select p.id,p.code,p.host_id,p.slug,p.source,p.name,p.poster,p.ep_index,p.srv_index,p.join_locked,p.scheduled_at,(p.host_id=$1) as is_host,$2::boolean as is_admin,
                 exists(select 1 from public.watch_party_members own where own.party_id=p.id and own.user_id=$1) as is_member,
                 (p.password_hash is not null) as has_password,
                 (select count(*)::int from public.watch_party_members m where m.party_id=p.id) as member_count
          from public.watch_parties p where p.closed=false order by p.created_at desc limit 100`,
-        [user.id],
+        [user.id, isAdmin(user)],
       );
       return json({ parties: rows });
     }
@@ -349,10 +349,13 @@ async function handler(request: Request) {
       if (!(await memberOrStaff(user, partyId))) return json({ error: "Forbidden" }, 403);
       const { rows } = await db().query(
         `select m.user_id,coalesce(p.display_name,u.raw_user_meta_data->>'display_name',split_part(u.email,'@',1)) as display_name,
-                m.created_at as joined_at
+                m.created_at as joined_at,
+                case when lower(u.email)=$2 then 'admin'
+                     when u.raw_app_meta_data->>'role'='deputy_admin' then 'deputy_admin'
+                     else 'member' end as staff_role
          from public.watch_party_members m left join public.profiles p on p.id=m.user_id
          left join auth.users u on u.id=m.user_id where m.party_id=$1 order by m.created_at`,
-        [partyId],
+        [partyId, ADMIN_EMAIL],
       );
       return json({ members: rows });
     }
@@ -392,12 +395,21 @@ async function handler(request: Request) {
          join public.watch_party_members m on m.party_id=p.id and m.user_id=$2
          join auth.users u on u.id=$2
          left join public.profiles pr on pr.id=$2
-         where p.id=$1 and p.closed=false and (p.chat_mode='all' or p.host_id=$2)
+         where p.id=$1 and p.closed=false and (p.chat_mode='all' or p.host_id=$2 or $5)
          returning *`,
-        [partyId, user.id, content, ADMIN_EMAIL],
+        [partyId, user.id, content, ADMIN_EMAIL, isAdmin(user)],
       );
       if (!rows[0]) return json({ error: "Phòng đã đóng hoặc chat đang bị khoá" }, 403);
-      return json({ message: rows[0] });
+      return json({
+        message: {
+          ...rows[0],
+          staff_role: isAdmin(user)
+            ? "admin"
+            : user.role === "deputy_admin"
+              ? "deputy_admin"
+              : "member",
+        },
+      });
     }
     if (body.action === "close") {
       const admin = isAdmin(user) || (await hasPermission(user, "watch_party.close"));
