@@ -41,6 +41,43 @@
   overflow: hidden;
 }
 
+@media (min-width: 861px) {
+  .player-page-root .app.watch-party-active {
+    padding-right: 20px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) min(285px, 30vw);
+    align-items: start;
+    gap: 12px 18px;
+  }
+  .player-page-root .app.watch-party-active > .topbar,
+  .player-page-root .app.watch-party-active > .watch-party-hero,
+  .player-page-root .app.watch-party-active > .watch-party-room-panel ~ * {
+    grid-column: 1 / -1;
+  }
+  .player-page-root .app.watch-party-active > .topbar {
+    grid-row: 1;
+    margin-bottom: 0;
+  }
+  .player-page-root .app.watch-party-active > .watch-party-hero {
+    grid-row: 2;
+    margin-bottom: 0;
+  }
+  .player-page-root .app.watch-party-active > .player-shell {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .player-page-root .app.watch-party-active > .watch-party-room-panel {
+    position: static;
+    grid-column: 2;
+    grid-row: 3;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin-top: 0;
+    overflow-y: auto;
+  }
+}
+
 .player-page-root .watch-party-admin-notice {
   position: absolute;
   z-index: 4;

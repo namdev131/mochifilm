@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [home, lobby, rightbar, player, api, migration, timeoutMigration] = await Promise.all([
+const [home, lobby, rightbar, player, api, migration, timeoutMigration, watchPartyCss] =
+  await Promise.all([
   readFile(new URL("../src/routes/index.tsx", import.meta.url), "utf8"),
   readFile(new URL("../src/components/home/WatchPartyLobby.tsx", import.meta.url), "utf8"),
   readFile(new URL("../src/components/player/PlayerRightbar.tsx", import.meta.url), "utf8"),
@@ -15,6 +16,7 @@ const [home, lobby, rightbar, player, api, migration, timeoutMigration] = await 
     new URL("../supabase/migrations/20260908000001_watch_party_host_timeout.sql", import.meta.url),
     "utf8",
   ),
+  readFile(new URL("../src/styles/watch-party-room.css", import.meta.url), "utf8"),
 ]);
 
 assert.match(home, /navigateToCategory\("watch-party"\)/);
@@ -35,6 +37,11 @@ const room = await readFile(
 );
 assert.match(player, /<WatchPartyRoomPanel/);
 assert.match(player, /className="watch-party-hero"/);
+assert.match(player, /className={`app\$\{search\.party \? " watch-party-active" : ""\}`}/);
+assert.match(
+  watchPartyCss,
+  /@media \(min-width: 861px\)[\s\S]*?\.player-page-root \.app\.watch-party-active[\s\S]*?grid-template-columns: minmax\(0, 1fr\) min\(285px, 30vw\);[\s\S]*?\.watch-party-hero[\s\S]*?grid-column: 1 \/ -1;[\s\S]*?\.player-shell[\s\S]*?grid-column: 1;[\s\S]*?\.watch-party-room-panel[\s\S]*?grid-column: 2;[\s\S]*?grid-row: 3;[\s\S]*?margin-top: 0;/,
+);
 assert.match(room, /Trò chuyện/);
 assert.match(room, /Thành viên/);
 assert.match(room, /Cài đặt/);

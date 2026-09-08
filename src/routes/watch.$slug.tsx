@@ -323,7 +323,7 @@ function WatchPlayerPage() {
       <PlayerSidebar onShowToast={triggerToast} />
 
       {/* Main Content Area */}
-      <main className="app">
+      <main className={`app${search.party ? " watch-party-active" : ""}`}>
         {/* Topbar */}
         <PlayerTopbar onShowToast={triggerToast} />
 
