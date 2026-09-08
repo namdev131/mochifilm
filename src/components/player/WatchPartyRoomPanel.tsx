@@ -58,6 +58,8 @@ export function WatchPartyRoomPanel({
   const [error, setError] = useState("");
   const [userId, setUserId] = useState("");
   const [qrOpen, setQrOpen] = useState(false);
+  const [roomPassword, setRoomPassword] = useState("");
+  const syncing = useRef(false);
   const [notice, setNotice] = useState("");
   const knownMessageIds = useRef<Set<string> | null>(null);
   const knownMemberIds = useRef<Set<string> | null>(null);
@@ -78,6 +80,54 @@ export function WatchPartyRoomPanel({
     if (!response.ok) throw new Error(result.error || "Watch Party gặp lỗi");
     return result;
   }, []);
+
+  const syncPlayback = useCallback(
+    async (manual = false) => {
+      if (!room || syncing.current) return;
+      const video = document.querySelector<HTMLVideoElement>("video#video");
+      if (!video || video.readyState < 1 || video.style.display === "none") {
+        if (manual) onShowToast("Đồng bộ cần player video trực tiếp đã tải; iframe không hỗ trợ.");
+        return;
+      }
+      syncing.current = true;
+      try {
+        if (room.is_host) {
+          await request({
+            action: "sync",
+            partyId: room.id,
+            patch: { position_seconds: video.currentTime, is_playing: !video.paused },
+          });
+        } else {
+          const result = await request({ action: "playback", partyId: room.id });
+          const state = result.playback;
+          const position =
+            Number(state.position_seconds) +
+            (state.is_playing
+              ? Math.max(0, (result.server_time - Date.parse(state.updated_at)) / 1000)
+              : 0);
+          if (Number.isFinite(position) && (manual || Math.abs(video.currentTime - position) > 2))
+            video.currentTime = Number.isFinite(video.duration)
+              ? Math.min(position, video.duration)
+              : position;
+          if (state.is_playing && video.paused) await video.play();
+          else if (!state.is_playing && !video.paused) video.pause();
+        }
+        if (manual) onShowToast("Đã đồng bộ với phòng");
+      } catch (cause) {
+        if (manual) onShowToast(cause instanceof Error ? cause.message : "Không thể đồng bộ");
+      } finally {
+        syncing.current = false;
+      }
+    },
+    [room?.id, room?.is_host, request, onShowToast],
+  );
+
+  useEffect(() => {
+    void syncPlayback();
+    // ponytail: polling every 2s; use realtime transport if subsecond sync is required.
+    const timer = window.setInterval(() => void syncPlayback(), 2000);
+    return () => window.clearInterval(timer);
+  }, [syncPlayback]);
 
   const load = useCallback(async () => {
     try {
@@ -226,6 +276,9 @@ export function WatchPartyRoomPanel({
           <div>
             <span>Watch Party</span>
             <strong>{partyCode}</strong>
+            <button type="button" onClick={() => void syncPlayback(true)}>
+              <RefreshCw /> Đồng bộ
+            </button>
           </div>
         </header>
 
@@ -412,6 +465,43 @@ export function WatchPartyRoomPanel({
             <strong id="watch-party-qr-title">Quét QR để tham gia phòng</strong>
             <img src={qrUrl} alt={`QR tham gia phòng ${partyCode}`} />
             <span>{partyCode}</span>
+            {room?.is_host && (
+              <form
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  if (busy) return;
+                  setBusy(true);
+                  try {
+                    await request({
+                      action: "set-password",
+                      partyId: room.id,
+                      password: roomPassword,
+                    });
+                    setRoomPassword("");
+                    onShowToast("Đã cập nhật mật khẩu phòng");
+                  } catch (cause) {
+                    onShowToast(cause instanceof Error ? cause.message : "Không lưu được mật khẩu");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <label>
+                  Mật khẩu phòng
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    maxLength={72}
+                    value={roomPassword}
+                    onChange={(event) => setRoomPassword(event.target.value)}
+                  />
+                </label>
+                <small>Để trống để bỏ mật khẩu. Không kèm mật khẩu trong QR.</small>
+                <button type="submit" disabled={busy}>
+                  Lưu mật khẩu
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}

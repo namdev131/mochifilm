@@ -335,6 +335,27 @@ async function handler(request: Request) {
     if (body.action === "join") return joinParty(user, body);
     const partyId = String(body.partyId ?? "");
 
+    if (body.action === "playback") {
+      if (!(await memberOrStaff(user, partyId))) return json({ error: "Chưa tham gia phòng" }, 403);
+      const { rows } = await db().query(
+        "select position_seconds,is_playing,updated_at,ep_index,srv_index from public.watch_parties where id=$1 and closed=false",
+        [partyId],
+      );
+      return rows[0]
+        ? json({ playback: rows[0], server_time: Date.now() })
+        : json({ error: "Phòng đã đóng" }, 404);
+    }
+    if (body.action === "set-password") {
+      const value = password(body.password);
+      const hash = value ? await hashPassword(value) : null;
+      const { rowCount } = await db().query(
+        "update public.watch_parties set password_hash=$3 where id=$1 and host_id=$2 and closed=false",
+        [partyId, user.id, hash],
+      );
+      return rowCount
+        ? json({ ok: true })
+        : json({ error: "Chỉ chủ phòng được đổi mật khẩu" }, 403);
+    }
     if (body.action === "host-heartbeat") {
       const { rowCount } = await db().query(
         `update public.watch_parties set last_host_seen_at=now()
@@ -489,7 +510,8 @@ async function handler(request: Request) {
         [partyId, user.id, ...entries.map(([, value]) => value)],
       );
       if (!rows[0]) return json({ error: "Chỉ chủ phòng được điều khiển" }, 403);
-      return json({ party: rows[0] });
+      const { password_hash: _passwordHash, ...safeParty } = rows[0];
+      return json({ party: safeParty });
     }
     return json({ error: "Unknown action" }, 400);
   } catch (error) {
