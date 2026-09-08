@@ -52,9 +52,7 @@ export async function vsmovLatest(page = 1): Promise<MovieCard[]> {
 }
 
 export async function vsmovSearch(q: string, limit = 24): Promise<MovieCard[]> {
-  const r = await fetch(
-    `${VSMOV_BASE}/tim-kiem?keyword=${encodeURIComponent(q)}&limit=${limit}`,
-  );
+  const r = await fetch(`${VSMOV_BASE}/tim-kiem?keyword=${encodeURIComponent(q)}&limit=${limit}`);
   if (!r.ok) return [];
   const j = await r.json();
   const items = j?.items || j?.data?.items || [];
@@ -71,7 +69,9 @@ export async function vsmovDetail(slug: string): Promise<MovieDetail> {
 
   const servers: EpisodeServer[] = (rawServers || [])
     .map((s: any) => ({
-      server_name: String(s.server_name || "Vietsub").replace(/\s+/g, " ").trim(),
+      server_name: String(s.server_name || "Vietsub")
+        .replace(/\s+/g, " ")
+        .trim(),
       items: (s.server_data || s.items || []).flatMap((ep: any) => {
         const raw = String(ep.name || ep.filename || "");
         const embed = ep.link_embed || ep.embed || undefined;
@@ -81,14 +81,16 @@ export async function vsmovDetail(slug: string): Promise<MovieDetail> {
         // luôn là nguồn có thể phát thay vì dừng ở "HLS không khả dụng".
         if (!direct) return [];
 
-        return [{
-          name: /^\d+$/.test(raw) ? `Tập ${raw}` : raw,
-          slug: ep.slug || raw,
-          m3u8: vsmovProxy(direct),
-          // Embed của VSMov bị khóa domain; không đưa vào player để tránh
-          // tự fallback từ HLS hợp lệ sang iframe chắc chắn lỗi.
-          embed: undefined,
-        }];
+        return [
+          {
+            name: /^\d+$/.test(raw) ? `Tập ${raw}` : raw,
+            slug: ep.slug || raw,
+            m3u8: vsmovProxy(direct),
+            // Embed của VSMov bị khóa domain; không đưa vào player để tránh
+            // tự fallback từ HLS hợp lệ sang iframe chắc chắn lỗi.
+            embed: undefined,
+          },
+        ];
       }),
     }))
     .filter((server: EpisodeServer) => server.items.length > 0);

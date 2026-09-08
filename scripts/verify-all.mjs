@@ -13,9 +13,10 @@ const tests = [
   "scripts/check-player-desktop-autohide.mjs",
   "scripts/check-player-page-contract.mjs",
   "scripts/check-realtime-search.mjs",
+  "scripts/check-admin-contract.mjs",
 ];
 
-console.log("=== CHẠY TOÀN BỘ BỘ TEST HỢP ĐỒNG (12 TEST SUITES) ===\n");
+console.log("=== CHẠY TOÀN BỘ BỘ TEST HỢP ĐỒNG (13 TEST SUITES) ===\n");
 let passed = 0;
 
 for (const t of tests) {
@@ -38,12 +39,25 @@ try {
   const resHome = await fetch("http://localhost:8091/");
   console.log(`- GET http://localhost:8091/ -> Status ${resHome.status} ${resHome.statusText}`);
   const htmlHome = await resHome.text();
-  console.log(`  Length: ${htmlHome.length} bytes, has HTML: ${htmlHome.includes("<!DOCTYPE html>") || htmlHome.includes("<div id=\"root\">") || htmlHome.includes("<script")}`);
+  console.log(
+    `  Length: ${htmlHome.length} bytes, has HTML: ${htmlHome.includes("<!DOCTYPE html>") || htmlHome.includes('<div id="root">') || htmlHome.includes("<script")}`,
+  );
 
   const resAuth = await fetch("http://localhost:8091/auth");
   console.log(`- GET http://localhost:8091/auth -> Status ${resAuth.status} ${resAuth.statusText}`);
   const htmlAuth = await resAuth.text();
-  console.log(`  Length: ${htmlAuth.length} bytes, has HTML: ${htmlAuth.includes("<!DOCTYPE html>") || htmlAuth.includes("<div id=\"root\">") || htmlAuth.includes("<script")}`);
+  console.log(
+    `  Length: ${htmlAuth.length} bytes, has HTML: ${htmlAuth.includes("<!DOCTYPE html>") || htmlAuth.includes('<div id="root">') || htmlAuth.includes("<script")}`,
+  );
+
+  const resAdmin = await fetch("http://localhost:8091/admin");
+  console.log(
+    `- GET http://localhost:8091/admin -> Status ${resAdmin.status} ${resAdmin.statusText}`,
+  );
+  const htmlAdmin = await resAdmin.text();
+  console.log(
+    `  Length: ${htmlAdmin.length} bytes, has HTML: ${htmlAdmin.includes("<!DOCTYPE html>") || htmlAdmin.includes('<div id="root">') || htmlAdmin.includes("<script")}`,
+  );
 } catch (e) {
   console.error("Lỗi kết nối localhost:", e.message);
 }

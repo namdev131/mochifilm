@@ -1,0 +1,389 @@
+.player-page-root .watch-party-hero {
+  min-height: 76px;
+  margin-bottom: 12px;
+  padding: 8px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.player-page-root .watch-party-hero h1 {
+  margin: 0;
+  color: #ff82a7;
+  font-family: var(--font-display, "Fredoka", sans-serif);
+  font-size: clamp(28px, 3vw, 38px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-weight: 700;
+}
+.player-page-root .watch-party-hero p {
+  margin: 6px 0 0;
+  color: #a897a1;
+  font-size: 14px;
+  font-family: var(--font-hand, "Dancing Script", cursive);
+}
+.player-page-root .watch-party-hero > strong {
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 91, 138, 0.28);
+  border-radius: 12px;
+  color: #ff96b4;
+  background: rgba(255, 91, 138, 0.07);
+  font-family: monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.player-page-root .watch-party-room-panel {
+  border: 1px solid rgba(255, 91, 138, 0.2);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(27, 17, 25, 0.98), rgba(13, 9, 13, 0.98));
+  overflow: hidden;
+}
+
+.player-page-root .watch-party-room-head {
+  min-height: 62px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 91, 138, 0.055);
+}
+
+.player-page-root .watch-party-room-head span,
+.player-page-root .watch-party-room-head strong {
+  display: block;
+}
+.player-page-root .watch-party-room-head span {
+  color: #d7c8d1;
+  font-size: 10px;
+  font-weight: 800;
+}
+.player-page-root .watch-party-room-head strong {
+  margin-top: 2px;
+  font-family: monospace;
+  font-size: 18px;
+  letter-spacing: 0.16em;
+  color: #ff82a7;
+}
+.player-page-root .watch-party-room-head button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+.player-page-root .watch-party-room-head svg {
+  width: 16px;
+}
+.player-page-root .watch-party-qr {
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  color: #bfaeb8;
+  font-size: 9px;
+  font-weight: 800;
+}
+.player-page-root .watch-party-qr img {
+  width: 64px;
+  height: 64px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.player-page-root .watch-party-tabs {
+  height: 54px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+.player-page-root .watch-party-tabs button {
+  position: relative;
+  border: 0;
+  background: transparent;
+  color: #9f8f99;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 800;
+}
+.player-page-root .watch-party-tabs button.active {
+  color: #fff;
+}
+.player-page-root .watch-party-tabs button.active::after {
+  content: "";
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 0;
+  height: 2px;
+  border-radius: 3px;
+  background: var(--pink);
+}
+.player-page-root .watch-party-tabs svg {
+  width: 15px;
+  height: 15px;
+}
+.player-page-root .watch-party-rules {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+.player-page-root .watch-party-rules img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+}
+
+.player-page-root .watch-party-chat {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.player-page-root .watch-party-messages {
+  flex: 1;
+  min-height: 280px;
+  overflow-y: auto;
+  padding: 13px;
+}
+.player-page-root .watch-party-messages article {
+  display: grid;
+  grid-template-columns: 31px 1fr;
+  gap: 8px;
+  margin-bottom: 13px;
+}
+.player-page-root .watch-party-avatar {
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #d8c8d1;
+  background: #321d2a;
+  border: 1px solid var(--line);
+}
+.player-page-root .watch-party-avatar svg {
+  width: 15px;
+}
+.player-page-root .watch-party-messages header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+.player-page-root .watch-party-messages header strong {
+  font-size: 9px;
+}
+.player-page-root .watch-party-messages header b {
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(255, 91, 138, 0.16);
+  color: #ff9ab7;
+  font-size: 7px;
+}
+.player-page-root .watch-party-messages time {
+  margin-left: auto;
+  color: #766771;
+  font-size: 7px;
+}
+.player-page-root .watch-party-messages p {
+  display: inline-block;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 6px 13px 13px;
+  background: #291b25;
+  color: #eadde4;
+  font-size: 9px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.player-page-root .watch-party-messages article.mine p {
+  border: 1px solid rgba(255, 91, 138, 0.14);
+  background: rgba(255, 91, 138, 0.1);
+}
+.player-page-root .watch-party-empty {
+  padding: 26px 10px !important;
+  background: transparent !important;
+  color: #91808a !important;
+  text-align: center;
+}
+
+.player-page-root .watch-party-composer {
+  padding: 10px;
+  border-top: 1px solid var(--line);
+}
+.player-page-root .watch-party-composer label {
+  display: block;
+  margin-bottom: 6px;
+  color: #b6a7b0;
+  font-size: 9px;
+  font-weight: 800;
+}
+.player-page-root .watch-party-composer div {
+  display: grid;
+  grid-template-columns: 1fr 40px;
+  gap: 7px;
+}
+.player-page-root .watch-party-composer input {
+  min-width: 0;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 0 11px;
+  outline: 0;
+  color: #fff;
+  background: #1c131a;
+  font-size: 10px;
+}
+.player-page-root .watch-party-composer input:focus {
+  border-color: rgba(255, 91, 138, 0.55);
+}
+.player-page-root .watch-party-composer button {
+  border: 0;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: var(--pink);
+  color: #fff;
+  cursor: pointer;
+}
+.player-page-root .watch-party-composer button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.player-page-root .watch-party-composer svg {
+  width: 16px;
+}
+
+.player-page-root .watch-party-member-list {
+  padding: 8px 12px;
+  overflow-y: auto;
+}
+.player-page-root .watch-party-member-list article {
+  min-height: 55px;
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 9px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+}
+.player-page-root .watch-party-member-list article:last-child {
+  border-bottom: 0;
+}
+.player-page-root .watch-party-member-list strong,
+.player-page-root .watch-party-member-list small {
+  display: block;
+}
+.player-page-root .watch-party-member-list strong {
+  font-size: 10px;
+}
+.player-page-root .watch-party-member-list small {
+  margin-top: 2px;
+  color: #887985;
+  font-size: 8px;
+}
+.player-page-root .watch-party-member-list b {
+  color: #ff91b0;
+  font-size: 8px;
+}
+
+.player-page-root .watch-party-settings {
+  padding: 13px;
+}
+.player-page-root .watch-party-settings > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 13px;
+}
+.player-page-root .watch-party-settings span strong,
+.player-page-root .watch-party-settings span small {
+  display: block;
+}
+.player-page-root .watch-party-settings span strong {
+  font-size: 10px;
+}
+.player-page-root .watch-party-settings span small {
+  margin-top: 3px;
+  color: #8f8089;
+  font-size: 8px;
+}
+.player-page-root .watch-party-settings button,
+.player-page-root .watch-party-room-error button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.player-page-root .watch-party-settings button svg,
+.player-page-root .watch-party-room-error svg {
+  width: 14px;
+}
+.player-page-root .watch-party-settings .watch-party-close {
+  width: 100%;
+  justify-content: center;
+  border-color: rgba(255, 104, 120, 0.25);
+  color: #ff9aa5;
+  background: rgba(255, 104, 120, 0.07);
+}
+.player-page-root .watch-party-room-error {
+  margin: auto;
+  padding: 24px;
+  text-align: center;
+  color: #ffadb8;
+  font-size: 10px;
+}
+.player-page-root .watch-party-room-error button {
+  margin-top: 10px;
+}
+
+@media (max-width: 1030px) {
+  .player-page-root .watch-party-room-panel {
+    min-height: 520px;
+  }
+}
+
+@media (max-width: 520px) {
+  .player-page-root .watch-party-hero {
+    min-height: 65px;
+  }
+  .player-page-root .watch-party-hero h1 {
+    font-size: 26px;
+  }
+  .player-page-root .watch-party-hero p {
+    font-size: 10px;
+  }
+  .player-page-root .watch-party-hero > strong {
+    padding: 8px 9px;
+    font-size: 9px;
+  }
+  .player-page-root .watch-party-room-panel {
+    min-height: 470px;
+    border-radius: 15px;
+  }
+  .player-page-root .watch-party-messages {
+    min-height: 250px;
+  }
+}

@@ -1,17 +1,5 @@
-import type {
-  MovieCard,
-  MovieDetail,
-  EpisodeServer,
-  SourceId,
-  SourceFilter,
-} from "./types";
-import {
-  VSMOV_BASE,
-  VSMOV_LATEST,
-  vsmovLatest,
-  vsmovSearch,
-  vsmovDetail,
-} from "./sources/vsmov";
+import type { MovieCard, MovieDetail, EpisodeServer, SourceId, SourceFilter } from "./types";
+import { VSMOV_BASE, VSMOV_LATEST, vsmovLatest, vsmovSearch, vsmovDetail } from "./sources/vsmov";
 import {
   PUBLIC_API_SOURCES,
   publicApiDetail,
@@ -66,7 +54,6 @@ export async function pingSource(id: SourceId): Promise<number> {
   }
 }
 
-
 // ---------- Normalize helpers ----------
 function kkImg(u?: string) {
   if (!u) return "";
@@ -78,7 +65,6 @@ function ophimImg(u?: string) {
   if (u.startsWith("http")) return u;
   return `https://img.ophim.live/uploads/movies/${u}`;
 }
-
 
 // ---------- Latest lists ----------
 export function sortByNewest(list: MovieCard[]): MovieCard[] {
@@ -99,103 +85,111 @@ export async function fetchLatest(source: SourceId, page = 1): Promise<MovieCard
     return publicApiLatest(source, page);
   }
   if (source === "kkphim") {
-    const r = await fetch(
-      `https://phimapi.com/danh-sach/phim-moi-cap-nhat-v3?page=${page}`,
-    );
+    const r = await fetch(`https://phimapi.com/danh-sach/phim-moi-cap-nhat-v3?page=${page}`);
     const j = await r.json();
-    return (j.items || []).map(
-      (m: any): MovieCard => {
-        const categoryList = (m.category || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
-        const countryList = (m.country || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
-        const isCinema = Boolean(
-          m.chieurap === true ||
-          m.chieu_rap === true ||
-          categoryList.some((c: string) => c.toLowerCase().includes("chiếu rạp") || c.toLowerCase().includes("chieu rap") || c === "phim-chieu-rap")
-        );
-        return {
-          slug: m.slug,
-          name: m.name,
-          origin_name: m.origin_name,
-          poster: kkImg(m.poster_url),
-          thumb: kkImg(m.thumb_url),
-          year: m.year,
-          quality: m.quality,
-          lang: m.lang,
-          episode_current: m.episode_current,
-          source: "kkphim",
-          type: m.type,
-          category: categoryList,
-          country: countryList,
-          chieu_rap: isCinema,
-          status: m.status,
-          modified: m.modified?.time || m.modified,
-        };
-      },
-    );
+    return (j.items || []).map((m: any): MovieCard => {
+      const categoryList = (m.category || []).map((c: any) =>
+        typeof c === "string" ? c : c.name || c.slug,
+      );
+      const countryList = (m.country || []).map((c: any) =>
+        typeof c === "string" ? c : c.name || c.slug,
+      );
+      const isCinema = Boolean(
+        m.chieurap === true ||
+        m.chieu_rap === true ||
+        categoryList.some(
+          (c: string) =>
+            c.toLowerCase().includes("chiếu rạp") ||
+            c.toLowerCase().includes("chieu rap") ||
+            c === "phim-chieu-rap",
+        ),
+      );
+      return {
+        slug: m.slug,
+        name: m.name,
+        origin_name: m.origin_name,
+        poster: kkImg(m.poster_url),
+        thumb: kkImg(m.thumb_url),
+        year: m.year,
+        quality: m.quality,
+        lang: m.lang,
+        episode_current: m.episode_current,
+        source: "kkphim",
+        type: m.type,
+        category: categoryList,
+        country: countryList,
+        chieu_rap: isCinema,
+        status: m.status,
+        modified: m.modified?.time || m.modified,
+      };
+    });
   }
   if (source === "ophim") {
     const r = await fetch(`https://ophim1.com/danh-sach/phim-moi-cap-nhat?page=${page}`);
     const j = await r.json();
-    return (j.items || []).map(
-      (m: any): MovieCard => {
-        const categoryList = (m.category || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
-        const countryList = (m.country || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
-        const isCinema = Boolean(
-          m.chieurap === true ||
-          m.chieu_rap === true ||
-          categoryList.some((c: string) => c.toLowerCase().includes("chiếu rạp") || c.toLowerCase().includes("chieu rap") || c === "phim-chieu-rap")
-        );
-        return {
-          slug: m.slug,
-          name: m.name,
-          origin_name: m.origin_name,
-          poster: ophimImg(m.poster_url),
-          thumb: ophimImg(m.thumb_url),
-          year: m.year,
-          quality: m.quality,
-          lang: m.lang,
-          episode_current: m.episode_current,
-          source: "ophim",
-          type: m.type,
-          category: categoryList,
-          country: countryList,
-          chieu_rap: isCinema,
-          status: m.status,
-          modified: m.modified?.time || m.modified,
-        };
-      },
-    );
-  }
-  if (source === "vsmov") return vsmovLatest(page);
-  const r = await fetch(
-
-    `https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=${page}`,
-  );
-  const j = await r.json();
-  return (j.items || []).map(
-    (m: any): MovieCard => {
-      const totalEp = typeof m.total_episodes === "number" ? m.total_episodes : parseInt(m.total_episodes, 10);
-      const inferredType = totalEp === 1 ? "single" : totalEp > 1 ? "series" : m.type;
+    return (j.items || []).map((m: any): MovieCard => {
+      const categoryList = (m.category || []).map((c: any) =>
+        typeof c === "string" ? c : c.name || c.slug,
+      );
+      const countryList = (m.country || []).map((c: any) =>
+        typeof c === "string" ? c : c.name || c.slug,
+      );
+      const isCinema = Boolean(
+        m.chieurap === true ||
+        m.chieu_rap === true ||
+        categoryList.some(
+          (c: string) =>
+            c.toLowerCase().includes("chiếu rạp") ||
+            c.toLowerCase().includes("chieu rap") ||
+            c === "phim-chieu-rap",
+        ),
+      );
       return {
         slug: m.slug,
         name: m.name,
-        origin_name: m.original_name,
-        poster: m.poster_url || m.thumb_url,
-        thumb: m.thumb_url || m.poster_url,
+        origin_name: m.origin_name,
+        poster: ophimImg(m.poster_url),
+        thumb: ophimImg(m.thumb_url),
         year: m.year,
         quality: m.quality,
-        lang: m.language || m.lang,
-        episode_current: m.current_episode || m.episode_current,
-        source: "nguonc",
-        type: inferredType,
-        category: [],
-        country: [],
-        chieu_rap: false,
+        lang: m.lang,
+        episode_current: m.episode_current,
+        source: "ophim",
+        type: m.type,
+        category: categoryList,
+        country: countryList,
+        chieu_rap: isCinema,
         status: m.status,
-        modified: m.modified || m.created,
+        modified: m.modified?.time || m.modified,
       };
-    },
-  );
+    });
+  }
+  if (source === "vsmov") return vsmovLatest(page);
+  const r = await fetch(`https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=${page}`);
+  const j = await r.json();
+  return (j.items || []).map((m: any): MovieCard => {
+    const totalEp =
+      typeof m.total_episodes === "number" ? m.total_episodes : parseInt(m.total_episodes, 10);
+    const inferredType = totalEp === 1 ? "single" : totalEp > 1 ? "series" : m.type;
+    return {
+      slug: m.slug,
+      name: m.name,
+      origin_name: m.original_name,
+      poster: m.poster_url || m.thumb_url,
+      thumb: m.thumb_url || m.poster_url,
+      year: m.year,
+      quality: m.quality,
+      lang: m.language || m.lang,
+      episode_current: m.current_episode || m.episode_current,
+      source: "nguonc",
+      type: inferredType,
+      category: [],
+      country: [],
+      chieu_rap: false,
+      status: m.status,
+      modified: m.modified || m.created,
+    };
+  });
 }
 
 export async function searchMovies(q: string, source: SourceId): Promise<MovieCard[]> {
@@ -209,35 +203,42 @@ export async function searchMovies(q: string, source: SourceId): Promise<MovieCa
     );
     const j = await r.json();
     const items = j?.data?.items || [];
-    return items.map(
-      (m: any): MovieCard => {
-        const categoryList = (m.category || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
-        const countryList = (m.country || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
-        const isCinema = Boolean(
-          m.chieurap === true ||
-          m.chieu_rap === true ||
-          categoryList.some((c: string) => c.toLowerCase().includes("chiếu rạp") || c.toLowerCase().includes("chieu rap") || c === "phim-chieu-rap")
-        );
-        return {
-          slug: m.slug,
-          name: m.name,
-          origin_name: m.origin_name,
-          poster: kkImg(m.poster_url),
-          thumb: kkImg(m.thumb_url),
-          year: m.year,
-          quality: m.quality,
-          lang: m.lang,
-          episode_current: m.episode_current,
-          source: "kkphim",
-          type: m.type,
-          category: categoryList,
-          country: countryList,
-          chieu_rap: isCinema,
-          status: m.status,
-          modified: m.modified?.time || m.modified,
-        };
-      },
-    );
+    return items.map((m: any): MovieCard => {
+      const categoryList = (m.category || []).map((c: any) =>
+        typeof c === "string" ? c : c.name || c.slug,
+      );
+      const countryList = (m.country || []).map((c: any) =>
+        typeof c === "string" ? c : c.name || c.slug,
+      );
+      const isCinema = Boolean(
+        m.chieurap === true ||
+        m.chieu_rap === true ||
+        categoryList.some(
+          (c: string) =>
+            c.toLowerCase().includes("chiếu rạp") ||
+            c.toLowerCase().includes("chieu rap") ||
+            c === "phim-chieu-rap",
+        ),
+      );
+      return {
+        slug: m.slug,
+        name: m.name,
+        origin_name: m.origin_name,
+        poster: kkImg(m.poster_url),
+        thumb: kkImg(m.thumb_url),
+        year: m.year,
+        quality: m.quality,
+        lang: m.lang,
+        episode_current: m.episode_current,
+        source: "kkphim",
+        type: m.type,
+        category: categoryList,
+        country: countryList,
+        chieu_rap: isCinema,
+        status: m.status,
+        modified: m.modified?.time || m.modified,
+      };
+    });
   }
   if (source === "ophim") {
     const r = await fetch(
@@ -245,65 +246,70 @@ export async function searchMovies(q: string, source: SourceId): Promise<MovieCa
     );
     const j = await r.json();
     const items = j?.data?.items || [];
-    return items.map(
-      (m: any): MovieCard => {
-        const categoryList = (m.category || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
-        const countryList = (m.country || []).map((c: any) => typeof c === "string" ? c : c.name || c.slug);
-        const isCinema = Boolean(
-          m.chieurap === true ||
-          m.chieu_rap === true ||
-          categoryList.some((c: string) => c.toLowerCase().includes("chiếu rạp") || c.toLowerCase().includes("chieu rap") || c === "phim-chieu-rap")
-        );
-        return {
-          slug: m.slug,
-          name: m.name,
-          poster: ophimImg(m.poster_url),
-          thumb: ophimImg(m.thumb_url),
-          year: m.year,
-          quality: m.quality,
-          lang: m.lang,
-          episode_current: m.episode_current,
-          source: "ophim",
-          type: m.type,
-          category: categoryList,
-          country: countryList,
-          chieu_rap: isCinema,
-          status: m.status,
-          modified: m.modified?.time || m.modified,
-        };
-      },
-    );
-  }
-  if (source === "vsmov") return vsmovSearch(q);
-  const r = await fetch(
-
-    `https://phim.nguonc.com/api/films/search?keyword=${encodeURIComponent(q)}`,
-  );
-  const j = await r.json();
-  return (j.items || []).map(
-    (m: any): MovieCard => {
-      const totalEp = typeof m.total_episodes === "number" ? m.total_episodes : parseInt(m.total_episodes, 10);
-      const inferredType = totalEp === 1 ? "single" : totalEp > 1 ? "series" : m.type;
+    return items.map((m: any): MovieCard => {
+      const categoryList = (m.category || []).map((c: any) =>
+        typeof c === "string" ? c : c.name || c.slug,
+      );
+      const countryList = (m.country || []).map((c: any) =>
+        typeof c === "string" ? c : c.name || c.slug,
+      );
+      const isCinema = Boolean(
+        m.chieurap === true ||
+        m.chieu_rap === true ||
+        categoryList.some(
+          (c: string) =>
+            c.toLowerCase().includes("chiếu rạp") ||
+            c.toLowerCase().includes("chieu rap") ||
+            c === "phim-chieu-rap",
+        ),
+      );
       return {
         slug: m.slug,
         name: m.name,
-        origin_name: m.original_name,
-        poster: m.poster_url || m.thumb_url,
-        thumb: m.thumb_url || m.poster_url,
+        poster: ophimImg(m.poster_url),
+        thumb: ophimImg(m.thumb_url),
         year: m.year,
         quality: m.quality,
-        lang: m.language || m.lang,
-        episode_current: m.current_episode || m.episode_current,
-        source: "nguonc",
-        type: inferredType,
-        category: [],
-        country: [],
-        chieu_rap: false,
+        lang: m.lang,
+        episode_current: m.episode_current,
+        source: "ophim",
+        type: m.type,
+        category: categoryList,
+        country: countryList,
+        chieu_rap: isCinema,
         status: m.status,
-        modified: m.modified || m.created,
+        modified: m.modified?.time || m.modified,
       };
-    },
+    });
+  }
+  if (source === "vsmov") return vsmovSearch(q);
+  const r = await fetch(
+    `https://phim.nguonc.com/api/films/search?keyword=${encodeURIComponent(q)}`,
   );
+  const j = await r.json();
+  return (j.items || []).map((m: any): MovieCard => {
+    const totalEp =
+      typeof m.total_episodes === "number" ? m.total_episodes : parseInt(m.total_episodes, 10);
+    const inferredType = totalEp === 1 ? "single" : totalEp > 1 ? "series" : m.type;
+    return {
+      slug: m.slug,
+      name: m.name,
+      origin_name: m.original_name,
+      poster: m.poster_url || m.thumb_url,
+      thumb: m.thumb_url || m.poster_url,
+      year: m.year,
+      quality: m.quality,
+      lang: m.language || m.lang,
+      episode_current: m.current_episode || m.episode_current,
+      source: "nguonc",
+      type: inferredType,
+      category: [],
+      country: [],
+      chieu_rap: false,
+      status: m.status,
+      modified: m.modified || m.created,
+    };
+  });
 }
 
 // ---------- Detail ----------
@@ -406,8 +412,14 @@ export async function fetchDetail(slug: string, source: SourceId): Promise<Movie
     time: m.time,
     category: catList,
     country: [],
-    actors: (m.casts || "").split(",").map((s: string) => s.trim()).filter(Boolean),
-    director: (m.director || "").split(",").map((s: string) => s.trim()).filter(Boolean),
+    actors: (m.casts || "")
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean),
+    director: (m.director || "")
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean),
     servers,
     source: "nguonc",
   };
@@ -441,21 +453,44 @@ export function mergeMovies(lists: MovieCard[][]): MovieCard[] {
 
 const ALL_SOURCES: SourceId[] = SOURCES.map((s) => s.id);
 
+const HOME_BLOCKED_MOVIES = new Set(["love-syndrome-iii", "love-mechanics", "i-want-your-sex"]);
+const HOME_RESTRICTED_TERMS = [
+  "đam mỹ",
+  "dam my",
+  "boy love",
+  "boys love",
+  "bl series",
+  "lgbt",
+  "18+",
+  "khiêu dâm",
+  "khieu dam",
+  "tình dục",
+  "tinh duc",
+  "sex",
+];
+const isHomeRestricted = (movie: MovieCard) => {
+  if (HOME_BLOCKED_MOVIES.has(movie.slug.toLowerCase())) return true;
+  const metadata = [movie.name, movie.origin_name, movie.content, ...(movie.category || [])]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return HOME_RESTRICTED_TERMS.some((term) => metadata.includes(term));
+};
+const filterHomeMovies = (movies: MovieCard[]) =>
+  movies.filter((movie) => !isHomeRestricted(movie));
+
 async function settled(tasks: Promise<MovieCard[]>[]): Promise<MovieCard[][]> {
   const res = await Promise.allSettled(tasks);
   return res.map((r) => (r.status === "fulfilled" ? r.value : []));
 }
 
-export async function fetchLatestMerged(
-  source: SourceFilter,
-  page = 1,
-): Promise<MovieCard[]> {
+export async function fetchLatestMerged(source: SourceFilter, page = 1): Promise<MovieCard[]> {
   if (source !== "all") {
     const list = await fetchLatest(source, page);
-    return sortByNewest(list);
+    return filterHomeMovies(sortByNewest(list));
   }
   const merged = mergeMovies(await settled(ALL_SOURCES.map((s) => fetchLatest(s, page))));
-  return sortByNewest(merged);
+  return filterHomeMovies(sortByNewest(merged));
 }
 
 const tokens = (s: string) =>
@@ -507,10 +542,7 @@ function relevance(m: MovieCard, q: string): number {
   return Math.max(0, Math.min(100, best));
 }
 
-export async function searchMoviesMerged(
-  q: string,
-  source: SourceFilter,
-): Promise<MovieCard[]> {
+export async function searchMoviesMerged(q: string, source: SourceFilter): Promise<MovieCard[]> {
   const keyword = q.replace(/\s+/g, " ").trim();
   if (!keyword) return [];
   const merged =
@@ -523,4 +555,3 @@ export async function searchMoviesMerged(
     .sort((a, b) => b.score - a.score || a.i - b.i)
     .map((x) => x.m);
 }
-

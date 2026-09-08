@@ -262,12 +262,23 @@ export const MochiLoadingScreen: React.FC = () => {
     }
   }, [handleFinish]);
 
-  // Initial welcome sequence (chỉ chạy lần đầu vào web)
-  useEffect(() => {
+  const startInitialLoading = useCallback(() => {
+    if (finishTimeoutRef.current) clearTimeout(finishTimeoutRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
+
     const name = getLoggedInUserName();
+    setLoadingMode("initial");
+    setIsRemoved(false);
+    setIsVisible(true);
+    setProgress(0);
     setUserName(name);
     setTitleText(userText("Mochi đang chào {name}", name));
+    setDescText(userText("Bé Mochi vừa tới rạp và đang chào {name} nè.", name));
     setBubbleText(userText("Mochi tới rồi nè, {name} ♡", name));
+    stateRef.current = "waving";
+    setCurrentState("waving");
+    frameIndexRef.current = 0;
+    lastFrameAtRef.current = performance.now();
 
     let currentProg = 0;
     timerRef.current = setInterval(() => {
@@ -290,15 +301,23 @@ export const MochiLoadingScreen: React.FC = () => {
       setDescText(userText(p.desc, name));
       setBubbleText(userText(p.bubble, name));
 
-      if (currentProg >= 100) {
-        handleFinish();
-      }
+      if (currentProg >= 100) handleFinish();
     }, 60);
+  }, [draw, handleFinish, userText]);
+
+  useEffect(() => {
+    startInitialLoading();
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) startInitialLoading();
+    };
+    window.addEventListener("pageshow", handlePageShow);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      window.removeEventListener("pageshow", handlePageShow);
     };
-  }, [draw, handleFinish, userText]);
+  }, [startInitialLoading]);
 
   // Window API & Event listeners
   useEffect(() => {

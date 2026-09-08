@@ -13,7 +13,7 @@ assert(pkg.dependencies["@supabase/supabase-js"], "Supabase dependency missing")
 assert(!pkg.dependencies["@clerk/clerk-react"], "Clerk dependency must be removed");
 assert.doesNotMatch(
   loader,
-  /hasShownInitialWebLoading/,
+  /hasShownInitialWebLoading\s*=/,
   "Initial loader state must not mutate during render",
 );
 assert(

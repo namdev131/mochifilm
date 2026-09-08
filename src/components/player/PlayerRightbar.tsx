@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Mic, Languages, Volume2, Server, Database } from "lucide-react";
+import { Copy, Mic, Languages, Volume2, Server, Database, Lock, Unlock } from "lucide-react";
 import type { EpisodeServer, SourceId } from "@/lib/types";
 import { SOURCES } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 interface PlayerRightbarProps {
   movieName: string;
+  movieSlug: string;
+  moviePoster?: string;
   movieLang?: string;
   servers?: EpisodeServer[];
   activeServerIndex?: number;
@@ -13,6 +16,8 @@ interface PlayerRightbarProps {
   providerId?: SourceId;
   onChangeProvider?: (provider: SourceId) => void;
   onShowToast: (msg: string) => void;
+  partyCode?: string;
+  onPartyJoined?: (code: string) => void;
 }
 
 export function detectServerLang(
@@ -49,6 +54,8 @@ export function detectServerLang(
 
 export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
   movieName,
+  movieSlug,
+  moviePoster,
   movieLang,
   servers,
   activeServerIndex = 0,
@@ -57,8 +64,119 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
   providerId,
   onChangeProvider,
   onShowToast,
+  partyCode,
+  onPartyJoined,
 }) => {
   const [selectedServerTab, setSelectedServerTab] = useState<number>(activeServerIndex);
+  const [joinCode, setJoinCode] = useState("");
+  const [partyPassword, setPartyPassword] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [partyBusy, setPartyBusy] = useState(false);
+  const [currentParty, setCurrentParty] = useState<{
+    id: string;
+    join_locked: boolean;
+    is_host: boolean;
+  } | null>(null);
+
+  const authRequest = async (body: Record<string, unknown>) => {
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session) throw new Error("Đăng nhập để dùng Watch Party");
+    const response = await fetch("/api/watch-party", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Watch Party gặp lỗi");
+    return result;
+  };
+
+  const partyRequest = async (action: "create" | "join") => {
+    const code =
+      action === "create"
+        ? Array.from(
+            crypto.getRandomValues(new Uint8Array(6)),
+            (n) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[n % 32],
+          ).join("")
+        : joinCode.trim().toUpperCase();
+    if (code.length !== 6) return onShowToast("Mã phòng phải có 6 ký tự");
+    if (partyPassword && partyPassword.length < 4)
+      return onShowToast("Mật khẩu phòng cần ít nhất 4 ký tự");
+    setPartyBusy(true);
+    try {
+      const result = await authRequest({
+        action,
+        code,
+        password: partyPassword || undefined,
+        scheduledAt:
+          action === "create" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
+        slug: movieSlug,
+        source: providerId,
+        name: movieName,
+        poster: moviePoster,
+        ep: activeEpisodeIndex,
+        srv: activeServerIndex,
+      });
+      if (!result.party) throw new Error("Không thể mở phòng");
+      if (action === "create" && scheduledAt && new Date(scheduledAt).getTime() > Date.now()) {
+        onShowToast(`Đã lên lịch phòng ${result.party.code}`);
+        setScheduledAt("");
+        return;
+      }
+      onPartyJoined?.(result.party.code);
+      onShowToast(
+        action === "create"
+          ? `Đã tạo phòng ${result.party.code}`
+          : `Đã vào phòng ${result.party.code}`,
+      );
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : "Watch Party gặp lỗi");
+    } finally {
+      setPartyBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!partyCode) return setCurrentParty(null);
+    void authRequest({ action: "list" })
+      .then((result) =>
+        setCurrentParty(
+          result.parties?.find((party: { code: string }) => party.code === partyCode) || null,
+        ),
+      )
+      .catch(() => setCurrentParty(null));
+  }, [partyCode]);
+
+  const togglePartyLock = async () => {
+    if (!currentParty) return;
+    setPartyBusy(true);
+    try {
+      await authRequest({
+        action: "set-lock",
+        partyId: currentParty.id,
+        locked: !currentParty.join_locked,
+      });
+      setCurrentParty({ ...currentParty, join_locked: !currentParty.join_locked });
+      onShowToast(currentParty.join_locked ? "Đã mở khóa phòng" : "Đã khóa phòng");
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : "Không thể đổi khóa phòng");
+    } finally {
+      setPartyBusy(false);
+    }
+  };
+
+  const copyPartyCode = async () => {
+    if (!partyCode) return;
+    try {
+      await navigator.clipboard.writeText(partyCode);
+      onShowToast(`Đã sao chép mã phòng ${partyCode}`);
+    } catch {
+      onShowToast("Không thể sao chép mã phòng");
+    }
+  };
 
   useEffect(() => {
     setSelectedServerTab(activeServerIndex);
@@ -283,17 +401,98 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
         <div className="party-card">
           <div className="party-state">
             <strong>Xem chung cùng bạn bè</strong>
-            <p>Tính năng đồng bộ phòng chiếu và trò chuyện theo thời gian thực.</p>
+            <p>
+              {partyCode
+                ? currentParty?.is_host
+                  ? `Bạn là chủ phòng · ${currentParty.join_locked ? "Phòng đang khóa" : "Phòng đang mở"}`
+                  : "Bạn đang tham gia với tư cách khách"
+                : "Tạo phòng hoặc nhập mã 6 ký tự để xem chung."}
+            </p>
             <div className="party-actions" style={{ marginTop: "10px" }}>
-              <button
-                type="button"
-                className="primary"
-                id="joinPartyBtn"
-                style={{ width: "100%", opacity: 0.65, cursor: "not-allowed" }}
-                disabled
-              >
-                Tính năng đang hoàn thiện
-              </button>
+              {!partyCode && (
+                <>
+                  <input
+                    value={joinCode}
+                    onChange={(event) => setJoinCode(event.target.value.slice(0, 6))}
+                    placeholder="MÃ PHÒNG (để trống nếu tạo)"
+                    aria-label="Mã Watch Party"
+                    style={{
+                      width: "100%",
+                      marginBottom: 8,
+                      textTransform: "uppercase",
+                      gridColumn: "1 / -1",
+                    }}
+                  />
+                  <input
+                    type="password"
+                    minLength={4}
+                    maxLength={72}
+                    autoComplete="new-password"
+                    value={partyPassword}
+                    onChange={(event) => setPartyPassword(event.target.value)}
+                    placeholder="Mật khẩu phòng (không bắt buộc)"
+                    aria-label="Mật khẩu phòng"
+                    style={{ width: "100%", marginBottom: 8, gridColumn: "1 / -1" }}
+                  />
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    min={new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
+                      .toISOString()
+                      .slice(0, 16)}
+                    onChange={(event) => setScheduledAt(event.target.value)}
+                    aria-label="Lịch mở phòng"
+                    style={{ width: "100%", marginBottom: 8, gridColumn: "1 / -1" }}
+                  />
+                </>
+              )}
+              {partyCode ? (
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => void copyPartyCode()}
+                  aria-label={`Sao chép mã phòng ${partyCode}`}
+                  style={{ width: "100%", gridColumn: "1 / -1", height: 42, fontSize: 13 }}
+                >
+                  <strong style={{ fontFamily: "monospace", fontSize: 16, letterSpacing: 2 }}>
+                    {partyCode}
+                  </strong>
+                  <Copy style={{ width: 15, marginLeft: 8 }} /> Sao chép mã phòng
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="primary"
+                  id="joinPartyBtn"
+                  style={{ width: "100%", gridColumn: "1 / -1" }}
+                  disabled={partyBusy}
+                  onClick={() => void partyRequest(joinCode ? "join" : "create")}
+                >
+                  {partyBusy
+                    ? "Đang kết nối..."
+                    : joinCode
+                      ? "Tham gia phòng"
+                      : "Tạo phòng Watch Party"}
+                </button>
+              )}
+              {partyCode && currentParty?.is_host && (
+                <button
+                  type="button"
+                  disabled={partyBusy}
+                  onClick={() => void togglePartyLock()}
+                  style={{ width: "100%", gridColumn: "1 / -1" }}
+                >
+                  {currentParty.join_locked ? (
+                    <>
+                      <Unlock /> Mở khóa phòng
+                    </>
+                  ) : (
+                    <>
+                      <Lock /> Khóa phòng
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

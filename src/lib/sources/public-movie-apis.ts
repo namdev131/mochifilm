@@ -1,7 +1,6 @@
 import type { EpisodeServer, MovieCard, MovieDetail, SourceId } from "../types";
 
 export const PUBLIC_API_SOURCES = {
-
   aiphim: {
     base: "https://aiphim.online/api",
     metadataOnly: false,
@@ -52,6 +51,7 @@ function aiCard(item: any, source: SourceId): MovieCard {
     slug: String(m.slug || m.id),
     name: m.title || m.name || m.original_title || String(m.id),
     origin_name: m.original_title || m.origin_name,
+    content: m.description,
     poster: m.poster || m.poster_url || "",
     thumb: m.thumb || m.thumb_url || m.poster || "",
     year: m.year,
@@ -59,6 +59,9 @@ function aiCard(item: any, source: SourceId): MovieCard {
     lang: m.language || m.lang,
     episode_current: m.episode_current,
     source: source,
+    category: m.genres || [],
+    country: m.country ? [m.country] : [],
+    type: m.type,
   };
 }
 

@@ -3,12 +3,15 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { SourceId, EpisodeServerItem, MovieCard } from "@/lib/types";
 import { fetchDetail, fetchLatest, SOURCES } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 import "@/styles/player.css";
 import "@/styles/player-controls.css";
+import "@/styles/watch-party-room.css";
 import { PlayerSidebar } from "@/components/player/PlayerSidebar";
 import { PlayerTopbar } from "@/components/player/PlayerTopbar";
 import { PlayerRightbar } from "@/components/player/PlayerRightbar";
+import { WatchPartyRoomPanel } from "@/components/player/WatchPartyRoomPanel";
 import { PlayerControls } from "@/components/player/PlayerControls";
 import { PlayerPanels } from "@/components/player/PlayerPanels";
 import { PlayerMobileNav } from "@/components/player/PlayerMobileNav";
@@ -17,6 +20,7 @@ export interface WatchSearchParams {
   source?: SourceId;
   ep?: number;
   srv?: number;
+  party?: string;
 }
 
 export const Route = createFileRoute("/watch/$slug")({
@@ -34,6 +38,7 @@ export const Route = createFileRoute("/watch/$slug")({
         : typeof search.srv === "string"
           ? parseInt(search.srv, 10) || 0
           : 0,
+    party: typeof search.party === "string" ? search.party : undefined,
   }),
   component: WatchPlayerPage,
 });
@@ -86,6 +91,25 @@ function WatchPlayerPage() {
   const currentEp: EpisodeServerItem | null =
     currentServer?.items?.[epIndex] || currentServer?.items?.[0] || null;
   const streamUrl: string | null = currentEp?.m3u8 || currentEp?.embed || null;
+
+  useEffect(() => {
+    if (!movie) return;
+    const movieKey = movie.name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/[^a-z0-9]/g, "");
+    void supabase.from("view_events").insert({
+      slug: movie.slug,
+      movie_key: movieKey,
+      name: movie.name,
+      poster: movie.poster,
+      source: currentSource,
+      kind: movie.type || "other",
+      lang: movie.lang || "vietsub",
+    } as never);
+  }, [movie?.slug, currentSource]);
 
   // Favorites state synced with localStorage
   const [isFavorite, setIsFavorite] = useState(false);
@@ -293,7 +317,7 @@ function WatchPlayerPage() {
     <div
       className={`player-page-root ${isLightsOut ? "lights-out" : ""} ${
         isTheater ? "theater" : ""
-      }`}
+      } ${search.party ? "watch-party-active" : ""}`}
     >
       {/* Sidebar */}
       <PlayerSidebar onShowToast={triggerToast} />
@@ -364,6 +388,15 @@ function WatchPlayerPage() {
           </div>
         ) : (
           <>
+            {search.party && (
+              <section className="watch-party-hero" aria-labelledby="watch-party-room-title">
+                <div>
+                  <h1 id="watch-party-room-title">Watch Party</h1>
+                  <p>Xem phim cùng nhau, ở bất cứ đâu.</p>
+                </div>
+                <strong>Phòng {search.party}</strong>
+              </section>
+            )}
             {/* Player Shell & Controls */}
             <PlayerControls
               movie={movie}
@@ -402,34 +435,59 @@ function WatchPlayerPage() {
               initialPosition={initialPosition}
             />
 
-            {/* Rightbar: episodes beside on desktop; stacked vertically on mobile */}
-            <PlayerRightbar
-              movieName={movie.name}
-              movieLang={movie.lang}
-              servers={movie.servers}
-              activeServerIndex={srvIndex}
-              activeEpisodeIndex={epIndex}
-              onSelectEpisode={(srv, ep) => {
-                navigate({
-                  to: "/watch/$slug",
-                  params: { slug },
-                  search: { source: currentSource, srv, ep },
-                });
-                triggerToast(
-                  `Chuyển sang ${movie.servers?.[srv]?.items?.[ep]?.name || `Tập ${ep + 1}`}`,
-                );
-              }}
-              providerId={currentSource}
-              onChangeProvider={(newProv) => {
-                navigate({
-                  to: "/watch/$slug",
-                  params: { slug },
-                  search: { source: newProv, srv: 0, ep: 0 },
-                });
-                triggerToast(`Đang chuyển sang kho phim ${newProv.toUpperCase()}`);
-              }}
-              onShowToast={triggerToast}
-            />
+            {/* Rightbar: active Watch Party room or standard episode controls */}
+            {search.party ? (
+              <WatchPartyRoomPanel
+                partyCode={search.party}
+                onShowToast={triggerToast}
+                onClosed={() => {
+                  navigate({
+                    to: "/watch/$slug",
+                    params: { slug },
+                    search: { source: currentSource, srv: srvIndex, ep: epIndex },
+                  });
+                  triggerToast("Đã đóng phòng Watch Party");
+                }}
+              />
+            ) : (
+              <PlayerRightbar
+                movieName={movie.name}
+                movieSlug={movie.slug}
+                moviePoster={movie.poster}
+                movieLang={movie.lang}
+                servers={movie.servers}
+                activeServerIndex={srvIndex}
+                activeEpisodeIndex={epIndex}
+                partyCode={search.party}
+                onPartyJoined={(party) => {
+                  navigate({
+                    to: "/watch/$slug",
+                    params: { slug },
+                    search: { source: currentSource, srv: srvIndex, ep: epIndex, party },
+                  });
+                }}
+                onSelectEpisode={(srv, ep) => {
+                  navigate({
+                    to: "/watch/$slug",
+                    params: { slug },
+                    search: { source: currentSource, srv, ep },
+                  });
+                  triggerToast(
+                    `Chuyển sang ${movie.servers?.[srv]?.items?.[ep]?.name || `Tập ${ep + 1}`}`,
+                  );
+                }}
+                providerId={currentSource}
+                onChangeProvider={(newProv) => {
+                  navigate({
+                    to: "/watch/$slug",
+                    params: { slug },
+                    search: { source: newProv, srv: 0, ep: 0 },
+                  });
+                  triggerToast(`Đang chuyển sang kho phim ${newProv.toUpperCase()}`);
+                }}
+                onShowToast={triggerToast}
+              />
+            )}
 
             {/* Synopsis, Shortcuts, Comments, Recommendations */}
             <PlayerPanels

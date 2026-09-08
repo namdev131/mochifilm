@@ -49,7 +49,6 @@ function stripToTs(stream: ReadableStream<Uint8Array>): ReadableStream<Uint8Arra
   );
 }
 
-
 /**
  * Proxy luồng HLS của VSMov: các file .ts/.png của họ không trả CORS nên
  * hls.js không đọc được trực tiếp từ trình duyệt.
@@ -124,7 +123,6 @@ export const Route = createFileRoute("/api/public/vsmov-stream")({
             "cache-control": "public, max-age=3600",
           },
         });
-
       },
     },
   },

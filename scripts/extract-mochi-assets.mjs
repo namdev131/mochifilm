@@ -25,8 +25,11 @@ function saveUri(uri, defaultName) {
   const base64Data = uri.slice(commaIdx + 1);
   const buffer = Buffer.from(base64Data, "base64");
 
-  const isPng = buffer.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]));
-  const isWebp = buffer.slice(0, 4).toString() === "RIFF" && buffer.slice(8, 12).toString() === "WEBP";
+  const isPng = buffer
+    .slice(0, 8)
+    .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  const isWebp =
+    buffer.slice(0, 4).toString() === "RIFF" && buffer.slice(8, 12).toString() === "WEBP";
 
   let finalName = defaultName;
   if (!isPng && defaultName.endsWith(".png") && isWebp) {
@@ -40,7 +43,9 @@ function saveUri(uri, defaultName) {
 
   const targetPath = join(outDir, finalName);
   writeFileSync(targetPath, buffer);
-  console.log(`Saved: ${finalName} | Header: ${header} | PNG: ${isPng} | WebP: ${isWebp} | Size: ${buffer.length} bytes`);
+  console.log(
+    `Saved: ${finalName} | Header: ${header} | PNG: ${isPng} | WebP: ${isWebp} | Size: ${buffer.length} bytes`,
+  );
   return finalName;
 }
 

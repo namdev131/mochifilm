@@ -8,6 +8,34 @@ interface AuthSearchParams {
   redirect?: string;
 }
 
+const AUTH_ATTEMPT_WINDOW_MS = 60_000;
+const AUTH_MAX_ATTEMPTS = 5;
+const authAttemptKey = (mode: "login" | "register", email: string) =>
+  `mochi_auth_attempts:${mode}:${email.trim().toLowerCase()}`;
+function storedAttempts(key: string) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(value)
+      ? value.filter((time): time is number => typeof time === "number")
+      : [];
+  } catch {
+    return [];
+  }
+}
+function retryAfter(mode: "login" | "register", email: string, now = Date.now()) {
+  const attempts = storedAttempts(authAttemptKey(mode, email));
+  const recent = attempts.filter((time) => now - time < AUTH_ATTEMPT_WINDOW_MS);
+  localStorage.setItem(authAttemptKey(mode, email), JSON.stringify(recent));
+  return recent.length < AUTH_MAX_ATTEMPTS
+    ? 0
+    : Math.ceil((AUTH_ATTEMPT_WINDOW_MS - (now - recent[0])) / 1000);
+}
+function recordAuthAttempt(mode: "login" | "register", email: string, now = Date.now()) {
+  const key = authAttemptKey(mode, email);
+  const recent = storedAttempts(key).filter((time) => now - time < AUTH_ATTEMPT_WINDOW_MS);
+  localStorage.setItem(key, JSON.stringify([...recent, now]));
+}
+
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): AuthSearchParams => ({
     mode: search.mode === "register" ? "register" : "login",
@@ -32,6 +60,7 @@ export function AuthPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [toast, setToast] = useState<{ show: boolean; msg: string }>({ show: false, msg: "" });
 
   // Sync mode with search param if it changes
@@ -82,6 +111,13 @@ export function AuthPage() {
     e.preventDefault();
     if (!validate()) return;
 
+    const wait = retryAfter(mode, email);
+    if (wait) {
+      setCooldownSeconds(wait);
+      showToastMsg(`Thử lại sau ${wait} giây.`);
+      return;
+    }
+    recordAuthAttempt(mode, email);
     setIsLoading(true);
 
     try {
@@ -182,6 +218,15 @@ export function AuthPage() {
     setMode(newMode);
     setErrors({});
   };
+
+  useEffect(() => {
+    if (!cooldownSeconds) return;
+    const timer = window.setInterval(
+      () => setCooldownSeconds((value) => Math.max(0, value - 1)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [cooldownSeconds]);
 
   return (
     <div className="auth-page-root">
@@ -445,15 +490,9 @@ export function AuthPage() {
                   <span className="auth-check-box">{agreedTerms ? "✓" : ""}</span>
                   <span>
                     Tôi đồng ý với{" "}
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        showToastMsg("Điều khoản và chính sách bảo mật Mochi Film");
-                      }}
-                    >
+                    <Link to="/legal" hash="terms">
                       Điều khoản &amp; Chính sách
-                    </a>
+                    </Link>
                   </span>
                 </label>
               </div>
@@ -463,8 +502,19 @@ export function AuthPage() {
             )}
 
             {/* Nút Submit */}
-            <button id="submitBtn" type="submit" disabled={isLoading} className="auth-submit">
-              <span>{mode === "login" ? "Đăng nhập →" : "Đăng ký tài khoản →"}</span>
+            <button
+              id="submitBtn"
+              type="submit"
+              disabled={isLoading || cooldownSeconds > 0}
+              className="auth-submit"
+            >
+              <span>
+                {cooldownSeconds
+                  ? `Thử lại sau ${cooldownSeconds}s`
+                  : mode === "login"
+                    ? "Đăng nhập →"
+                    : "Đăng ký tài khoản →"}
+              </span>
               {isLoading && <span className="inline-block animate-spin ml-2">↻</span>}
             </button>
 
@@ -525,24 +575,12 @@ export function AuthPage() {
         <div>© Mochi Film · Những bộ phim làm cuộc sống ngọt ngào hơn.</div>
         <div className="auth-footer-links">
           <Link to="/">Trang chủ</Link>
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              showToastMsg("Chính sách điều khoản Mochi Film");
-            }}
-          >
+          <Link to="/legal" hash="terms">
             Điều khoản
-          </a>
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              showToastMsg("Quyền riêng tư Mochi Film");
-            }}
-          >
+          </Link>
+          <Link to="/legal" hash="privacy">
             Quyền riêng tư
-          </a>
+          </Link>
           <a
             href="#"
             onClick={(e) => {

@@ -21,9 +21,8 @@
   color: var(--text);
   background:
     radial-gradient(circle at 13% 4%, rgba(255, 91, 138, 0.055), transparent 24%),
-    radial-gradient(circle at 80% 5%, rgba(255, 199, 93, 0.035), transparent 28%),
-    var(--bg);
-  font-family: 'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    radial-gradient(circle at 80% 5%, rgba(255, 199, 93, 0.035), transparent 28%), var(--bg);
+  font-family: var(--font-ui, "Be Vietnam Pro", Inter, sans-serif);
   overflow-x: hidden;
   position: relative;
 }
@@ -261,7 +260,9 @@
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.85),
+    0 0 1px rgba(255, 255, 255, 0.2);
   z-index: 1000;
   overflow: hidden;
   animation: detailsSearchFadeIn 0.2s ease-out;
@@ -296,8 +297,13 @@
 }
 
 @keyframes detailsSearchPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .details-root .topbar-search-list {
@@ -325,7 +331,9 @@
   padding: 8px 10px;
   border-radius: 10px;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
   text-decoration: none;
   color: inherit;
 }
@@ -432,7 +440,9 @@
   background: rgba(255, 255, 255, 0.02);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .details-root .topbar-search-footer:hover {
@@ -512,7 +522,13 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(13, 9, 13, 0.98) 0%, rgba(13, 9, 13, 0.94) 27%, rgba(13, 9, 13, 0.5) 54%, rgba(13, 9, 13, 0.12) 100%),
+    linear-gradient(
+      90deg,
+      rgba(13, 9, 13, 0.98) 0%,
+      rgba(13, 9, 13, 0.94) 27%,
+      rgba(13, 9, 13, 0.5) 54%,
+      rgba(13, 9, 13, 0.12) 100%
+    ),
     linear-gradient(0deg, rgba(13, 9, 13, 0.86), transparent 48%);
 }
 
@@ -581,11 +597,12 @@
 
 .details-root .hero-copy h1 {
   margin: 0 0 6px;
-  font-size: 43px;
-  line-height: 1.08;
-  letter-spacing: -1.8px;
+  font-family: var(--font-display, "Fredoka", sans-serif);
+  font-size: clamp(32px, 4vw, 46px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   color: #fff;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .details-root .hero-copy .subtitle {
@@ -646,7 +663,9 @@
   font-size: 10px;
   font-weight: 900;
   cursor: pointer;
-  transition: transform 0.18s ease, background-color 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease;
   color: #fff;
   text-decoration: none;
 }
@@ -1169,8 +1188,12 @@
     min-height: 490px;
   }
   .details-root .hero-bg-layer::before {
-    background:
-      linear-gradient(0deg, rgba(13, 9, 13, 0.98) 0%, rgba(13, 9, 13, 0.94) 37%, rgba(13, 9, 13, 0.12) 72%);
+    background: linear-gradient(
+      0deg,
+      rgba(13, 9, 13, 0.98) 0%,
+      rgba(13, 9, 13, 0.94) 37%,
+      rgba(13, 9, 13, 0.12) 72%
+    );
   }
   .details-root .hero-inner {
     grid-template-columns: 118px 1fr;

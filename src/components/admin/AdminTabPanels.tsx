@@ -12,6 +12,7 @@ import {
 import {
   SOURCES,
   type AdminComment,
+  type AdminDatabaseStats,
   type AdminParty,
   type AdminUser,
   type PermRow,
@@ -45,6 +46,7 @@ interface Props {
   onCloseParty: (party: AdminParty) => void;
   onTogglePartyLock: (party: AdminParty) => void;
   sourcePings: Record<string, number>;
+  databaseStats?: AdminDatabaseStats;
 }
 
 const Card = ({ children }: { children: React.ReactNode }) => (
@@ -92,6 +94,31 @@ export function AdminTabPanels(props: Props) {
                 <p className="mt-2 text-3xl font-black">{value}</p>
               </Card>
             ))}
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <Card>
+              <div className="flex items-center justify-between">
+                <b>Supabase</b>
+                <span className="text-[10px] text-emerald-400">Đã kết nối</span>
+              </div>
+              <p className="mt-3 text-xs text-[#b8a8b2]">
+                {props.users.length} người dùng · {props.comments.length} bình luận ·{" "}
+                {props.parties.length} phòng
+              </p>
+            </Card>
+            <Card>
+              <div className="flex items-center justify-between">
+                <b>Convex</b>
+                <span className="text-[10px] text-emerald-400">
+                  {props.databaseStats ? "Đã kết nối" : "Đang tải"}
+                </span>
+              </div>
+              <p className="mt-3 text-xs text-[#b8a8b2]">
+                {props.databaseStats
+                  ? `${props.databaseStats.favorites} yêu thích · ${props.databaseStats.watchHistory} lượt xem · ${props.databaseStats.ratings} đánh giá · ${props.databaseStats.notifications} thông báo`
+                  : "Đang đọc dữ liệu Convex..."}
+              </p>
+            </Card>
           </div>
           <div className="grid md:grid-cols-3 gap-3">
             {(["users", "comments", "parties"] as AdminTab[]).map((tab) => (

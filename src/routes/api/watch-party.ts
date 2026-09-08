@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Pool, type PoolClient } from "pg";
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
 
 const ADMIN_EMAIL = "lacviet55@proton.me";
 const CODE = /^[A-Z2-9]{6}$/;
+const HOST_ABSENCE_TIMEOUT_MINUTES = 5;
+const scrypt = promisify(scryptCallback);
 const schema = `
 create table if not exists public.watch_parties (
   id uuid primary key default gen_random_uuid(), code text not null unique,
@@ -10,11 +14,15 @@ create table if not exists public.watch_parties (
   slug text not null, source text not null default 'kkphim', name text not null, poster text,
   ep_index integer not null default 0, srv_index integer not null default 0,
   position_seconds double precision not null default 0, is_playing boolean not null default false,
-  closed boolean not null default false, join_locked boolean not null default false,
+  closed boolean not null default false, join_locked boolean not null default false, password_hash text,
   chat_mode text not null default 'all' check(chat_mode in ('all','host')),
-  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
+  last_host_seen_at timestamptz not null default now()
 );
 alter table public.watch_parties add column if not exists join_locked boolean not null default false;
+alter table public.watch_parties add column if not exists password_hash text;
+alter table public.watch_parties add column if not exists last_host_seen_at timestamptz not null default now();
+alter table public.watch_parties add column if not exists scheduled_at timestamptz not null default now();
 create table if not exists public.watch_party_messages (
   id uuid primary key default gen_random_uuid(), party_id uuid not null references public.watch_parties(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade, display_name text,
@@ -46,7 +54,9 @@ alter table public.watch_parties enable row level security;
 alter table public.watch_party_messages enable row level security;
 alter table public.watch_party_members enable row level security;
 revoke insert,update,delete on public.watch_parties,public.watch_party_messages,public.watch_party_members from authenticated;
-grant select on public.watch_parties,public.watch_party_messages,public.watch_party_members to authenticated;
+revoke select on public.watch_parties from authenticated;
+grant select(id,code,host_id,slug,source,name,poster,ep_index,srv_index,position_seconds,is_playing,closed,join_locked,chat_mode,created_at,updated_at) on public.watch_parties to authenticated;
+grant select on public.watch_party_messages,public.watch_party_members to authenticated;
 drop policy if exists "Authenticated can view open parties" on public.watch_parties;
 drop policy if exists "Party members view parties" on public.watch_parties;
 create policy "Party members view parties" on public.watch_parties for select to authenticated using (
@@ -70,6 +80,13 @@ async function ensureSchema() {
   if (schemaReady) return;
   await db().query(schema);
   schemaReady = true;
+}
+async function deleteStaleParties() {
+  await db().query(
+    `delete from public.watch_parties
+     where closed=false and scheduled_at <= now() and last_host_seen_at < now() - ($1 * interval '1 minute')`,
+    [HOST_ABSENCE_TIMEOUT_MINUTES],
+  );
 }
 type CurrentUser = { id: string; email?: string; role?: string };
 async function currentUser(request: Request): Promise<CurrentUser | null> {
@@ -106,6 +123,23 @@ const integer = (value: unknown) => {
   const result = Number(value);
   return Number.isInteger(result) && result >= 0 ? result : null;
 };
+const password = (value: unknown) => {
+  if (value === undefined || value === null || value === "") return "";
+  const result = typeof value === "string" ? value : "";
+  return result.length >= 4 && result.length <= 72 ? result : null;
+};
+async function hashPassword(value: string) {
+  const salt = randomBytes(16);
+  const derived = (await scrypt(value, salt, 32)) as Buffer;
+  return `${salt.toString("hex")}:${derived.toString("hex")}`;
+}
+async function verifyPassword(value: string, stored: string) {
+  const [saltHex, hashHex] = stored.split(":");
+  if (!saltHex || !hashHex) return false;
+  const expected = Buffer.from(hashHex, "hex");
+  const actual = (await scrypt(value, Buffer.from(saltHex, "hex"), expected.length)) as Buffer;
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
 const json = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "cache-control": "no-store" } });
 async function memberOrStaff(user: CurrentUser, partyId: string, permission = "watch_party.view") {
@@ -140,15 +174,35 @@ async function createParty(user: CurrentUser, body: Record<string, unknown>) {
   const name = text(body.name, 300);
   const ep = integer(body.ep) ?? 0;
   const srv = integer(body.srv) ?? 0;
-  if (!CODE.test(code) || !slug || !source || !name)
+  const roomPassword = password(body.password);
+  const scheduledAt = body.scheduledAt ? new Date(String(body.scheduledAt)) : new Date();
+  if (!CODE.test(code) || !slug || !source || !name || roomPassword === null)
     return json({ error: "Dữ liệu phòng không hợp lệ" }, 400);
+  if (
+    Number.isNaN(scheduledAt.getTime()) ||
+    scheduledAt.getTime() > Date.now() + 30 * 24 * 60 * 60 * 1000
+  )
+    return json({ error: "Lịch mở phòng không hợp lệ" }, 400);
+  const passwordHash = roomPassword ? await hashPassword(roomPassword) : null;
   const client = await db().connect();
   try {
     await client.query("begin");
     const { rows } = await client.query(
-      `insert into public.watch_parties(code,host_id,slug,source,name,poster,ep_index,srv_index)
-       values($1,$2,$3,$4,$5,$6,$7,$8) returning *`,
-      [code, user.id, slug, source, name, text(body.poster, 1000), ep, srv],
+      `insert into public.watch_parties(code,host_id,slug,source,name,poster,ep_index,srv_index,password_hash,scheduled_at,last_host_seen_at)
+       values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10)
+       returning id,code,host_id,slug,source,name,poster,ep_index,srv_index,join_locked,scheduled_at`,
+      [
+        code,
+        user.id,
+        slug,
+        source,
+        name,
+        text(body.poster, 1000),
+        ep,
+        srv,
+        passwordHash,
+        scheduledAt.toISOString(),
+      ],
     );
     await client.query(
       `insert into public.watch_party_members(party_id,user_id) values($1,$2) on conflict(party_id,user_id) do nothing`,
@@ -181,6 +235,10 @@ async function joinParty(user: CurrentUser, body: Record<string, unknown>) {
       await client.query("rollback");
       return json({ party: null });
     }
+    if (new Date(party.scheduled_at).getTime() > Date.now()) {
+      await client.query("rollback");
+      return json({ error: "Phòng chưa đến giờ mở" }, 403);
+    }
     const member = await client.query(
       `select 1 from public.watch_party_members where party_id=$1 and user_id=$2`,
       [party.id, user.id],
@@ -189,12 +247,20 @@ async function joinParty(user: CurrentUser, body: Record<string, unknown>) {
       await client.query("rollback");
       return json({ error: "Phòng đang khóa người tham gia mới" }, 403);
     }
+    if (party.password_hash && party.host_id !== user.id && !member.rowCount) {
+      const supplied = password(body.password);
+      if (!supplied || !(await verifyPassword(supplied, party.password_hash))) {
+        await client.query("rollback");
+        return json({ error: "Mật khẩu phòng không đúng" }, 403);
+      }
+    }
     await client.query(
       `insert into public.watch_party_members(party_id,user_id) values($1,$2) on conflict(party_id,user_id) do nothing`,
       [party.id, user.id],
     );
     await client.query("commit");
-    return json({ party });
+    const { password_hash: _passwordHash, ...safeParty } = party;
+    return json({ party: safeParty });
   } catch (error) {
     await client.query("rollback");
     throw error;
@@ -252,10 +318,32 @@ async function handler(request: Request) {
     const user = await currentUser(request);
     if (!user) return json({ error: "Unauthorized" }, 401);
     await ensureSchema();
+    await deleteStaleParties();
     const body = (await request.json()) as Record<string, unknown>;
+    if (body.action === "list") {
+      const { rows } = await db().query(
+        `select p.id,p.code,p.host_id,p.slug,p.source,p.name,p.poster,p.ep_index,p.srv_index,p.join_locked,p.scheduled_at,(p.host_id=$1) as is_host,
+                exists(select 1 from public.watch_party_members own where own.party_id=p.id and own.user_id=$1) as is_member,
+                (p.password_hash is not null) as has_password,
+                (select count(*)::int from public.watch_party_members m where m.party_id=p.id) as member_count
+         from public.watch_parties p where p.closed=false order by p.created_at desc limit 100`,
+        [user.id],
+      );
+      return json({ parties: rows });
+    }
     if (body.action === "create") return createParty(user, body);
     if (body.action === "join") return joinParty(user, body);
     const partyId = String(body.partyId ?? "");
+
+    if (body.action === "host-heartbeat") {
+      const { rowCount } = await db().query(
+        `update public.watch_parties set last_host_seen_at=now()
+         where id=$1 and host_id=$2 and closed=false`,
+        [partyId, user.id],
+      );
+      if (!rowCount) return json({ error: "Chỉ chủ phòng được duy trì phòng" }, 403);
+      return json({ ok: true });
+    }
 
     if (body.action === "members-list") {
       if (!(await memberOrStaff(user, partyId))) return json({ error: "Forbidden" }, 403);
@@ -297,7 +385,7 @@ async function handler(request: Request) {
          select p.id,$2,
            case when lower(u.email)=$4 then 'Nhím Admin'
                 when u.raw_app_meta_data->>'role'='deputy_admin'
-                  then 'Phó Admin Lạc Việt · ' || coalesce(pr.display_name,u.raw_user_meta_data->>'display_name',split_part(u.email,'@',1),'Thành viên')
+                  then 'Phó Admin Mochi · ' || coalesce(pr.display_name,u.raw_user_meta_data->>'display_name',split_part(u.email,'@',1),'Thành viên')
                 else coalesce(pr.display_name,u.raw_user_meta_data->>'display_name',split_part(u.email,'@',1),'Thành viên') end,
            $3
          from public.watch_parties p

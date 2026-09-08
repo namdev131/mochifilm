@@ -102,17 +102,19 @@ export async function fetchCinemaCatalog(): Promise<CinemaCatalog> {
     getJson<CinemaMovie[]>("/movies"),
     getJson<CinemaVenue[]>("/cinemas"),
     getJson<Omit<CinemaShowtime, "screens">[]>("/showtimes"),
-  ]).then(([movies, cinemas, showtimes]) => ({
-    movies,
-    cinemas,
-    showtimes: showtimes.map((showtime) => ({
-      ...showtime,
-      screens: parseJsonArray<CinemaScreen>(showtime.time),
-    })),
-  })).catch((error) => {
-    catalogPromise = null;
-    throw error;
-  }));
+  ])
+    .then(([movies, cinemas, showtimes]) => ({
+      movies,
+      cinemas,
+      showtimes: showtimes.map((showtime) => ({
+        ...showtime,
+        screens: parseJsonArray<CinemaScreen>(showtime.time),
+      })),
+    }))
+    .catch((error) => {
+      catalogPromise = null;
+      throw error;
+    }));
 }
 
 export function joinCinemaShowtimes(catalog: CinemaCatalog): JoinedCinemaShowtime[] {

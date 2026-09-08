@@ -60,6 +60,15 @@ export interface AuditEntry {
   created_at: string;
 }
 
+export interface AdminDatabaseStats {
+  users: number;
+  favorites: number;
+  watchHistory: number;
+  ratings: number;
+  notifications: number;
+  watchParties: number;
+}
+
 export interface PermRow {
   id: Permission;
   name: string;

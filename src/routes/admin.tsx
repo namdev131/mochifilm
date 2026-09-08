@@ -3,11 +3,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, Check, LogIn, Shield, X } from "lucide-react";
 import { useAppAuth, supabase } from "@/lib/auth-data-provider";
 import { SOURCES, pingSource } from "@/lib/api";
+import { useQuery as useConvexQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import "@/styles/admin.css";
 import {
   ADMIN_EMAIL,
   PERMISSION_ROWS,
   type AdminComment,
+  type AdminDatabaseStats,
   type AdminParty,
   type AdminUser,
   type AuditEntry,
@@ -84,6 +87,8 @@ export function AdminPage() {
   );
   const isDeputy = user?.app_metadata?.role === "deputy_admin";
   const isStaff = isAdmin || isDeputy;
+  const databaseStats = useConvexQuery(api.admin.dashboard, isAdmin ? {} : "skip") as
+    AdminDatabaseStats | null | undefined;
   const hasPermission = useCallback(
     (permission: Permission) => isAdmin || permissions.includes(permission),
     [isAdmin, permissions],
@@ -350,6 +355,7 @@ export function AdminPage() {
               )
             }
             sourcePings={sourcePings}
+            databaseStats={databaseStats}
           />
         </main>
       </div>

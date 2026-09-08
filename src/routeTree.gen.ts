@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as LegalRouteImport } from './routes/legal'
 import { Route as ApiAdminRouteImport } from './routes/api/admin'
 import { Route as ApiEpisodeWatcherRouteImport } from './routes/api/episode-watcher'
 import { Route as ApiRatingsRouteImport } from './routes/api/ratings'
@@ -26,6 +28,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -34,6 +41,11 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalRoute = LegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminRoute = ApiAdminRouteImport.update({
@@ -79,8 +91,10 @@ const ApiPublicVsmovStreamRoute = ApiPublicVsmovStreamRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/legal': typeof LegalRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
   '/api/ratings': typeof ApiRatingsRoute
@@ -92,8 +106,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/legal': typeof LegalRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
   '/api/ratings': typeof ApiRatingsRoute
@@ -106,8 +122,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/legal': typeof LegalRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
   '/api/ratings': typeof ApiRatingsRoute
@@ -121,8 +139,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/admin'
     | '/auth'
+    | '/legal'
     | '/api/admin'
     | '/api/episode-watcher'
     | '/api/ratings'
@@ -134,8 +154,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/admin'
     | '/auth'
+    | '/legal'
     | '/api/admin'
     | '/api/episode-watcher'
     | '/api/ratings'
@@ -147,8 +169,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/admin'
     | '/auth'
+    | '/legal'
     | '/api/admin'
     | '/api/episode-watcher'
     | '/api/ratings'
@@ -161,8 +185,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  LegalRoute: typeof LegalRoute
   ApiAdminRoute: typeof ApiAdminRoute
   ApiEpisodeWatcherRoute: typeof ApiEpisodeWatcherRoute
   ApiRatingsRoute: typeof ApiRatingsRoute
@@ -182,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -194,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal': {
+      id: '/legal'
+      path: '/legal'
+      fullPath: '/legal'
+      preLoaderRoute: typeof LegalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin': {
@@ -257,8 +297,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  LegalRoute: LegalRoute,
   ApiAdminRoute: ApiAdminRoute,
   ApiEpisodeWatcherRoute: ApiEpisodeWatcherRoute,
   ApiRatingsRoute: ApiRatingsRoute,

@@ -2,7 +2,9 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import assert from "node:assert";
 
-console.log("-> Đang kiểm tra tính năng nút đổi nguồn, chọn tập và toggle HLS/Embed trong player...");
+console.log(
+  "-> Đang kiểm tra tính năng nút đổi nguồn, chọn tập và toggle HLS/Embed trong player...",
+);
 
 const root = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 
@@ -11,7 +13,10 @@ console.log("1. Kiểm tra PlayerInDrawer.tsx...");
 const drawerPath = join(root, "src/components/player/PlayerInDrawer.tsx");
 assert(existsSync(drawerPath), "LỖI: Thiếu src/components/player/PlayerInDrawer.tsx");
 const drawerCode = readFileSync(drawerPath, "utf8");
-assert(drawerCode.includes("export const PlayerInDrawer"), "LỖI: PlayerInDrawer phải export component");
+assert(
+  drawerCode.includes("export const PlayerInDrawer"),
+  "LỖI: PlayerInDrawer phải export component",
+);
 assert(drawerCode.includes("player-in-drawer-backdrop"), "LỖI: Thiếu backdrop drawer");
 assert(drawerCode.includes("drawer-tab-btn"), "LỖI: Thiếu nút tab chọn tập / máy chủ");
 assert(drawerCode.includes("drawer-episodes-grid"), "LỖI: Thiếu lưới tập phim");
@@ -46,10 +51,22 @@ console.log("   ✓ Wiring PlayerControls hoàn chỉnh.");
 console.log("4. Kiểm tra watch.$slug.tsx...");
 const routePath = join(root, "src/routes/watch.$slug.tsx");
 const routeCode = readFileSync(routePath, "utf8");
-assert(routeCode.includes("servers={movie.servers}"), "LỖI: watch.$slug.tsx chưa truyền servers vào PlayerControls");
-assert(routeCode.includes("activeServerIndex={srvIndex}"), "LỖI: watch.$slug.tsx chưa truyền activeServerIndex vào PlayerControls");
-assert(routeCode.includes("activeEpisodeIndex={epIndex}"), "LỖI: watch.$slug.tsx chưa truyền activeEpisodeIndex vào PlayerControls");
-assert(routeCode.includes("onSelectEpisode="), "LỖI: watch.$slug.tsx chưa truyền onSelectEpisode vào PlayerControls");
+assert(
+  routeCode.includes("servers={movie.servers}"),
+  "LỖI: watch.$slug.tsx chưa truyền servers vào PlayerControls",
+);
+assert(
+  routeCode.includes("activeServerIndex={srvIndex}"),
+  "LỖI: watch.$slug.tsx chưa truyền activeServerIndex vào PlayerControls",
+);
+assert(
+  routeCode.includes("activeEpisodeIndex={epIndex}"),
+  "LỖI: watch.$slug.tsx chưa truyền activeEpisodeIndex vào PlayerControls",
+);
+assert(
+  routeCode.includes("onSelectEpisode="),
+  "LỖI: watch.$slug.tsx chưa truyền onSelectEpisode vào PlayerControls",
+);
 console.log("   ✓ Wiring route watch.$slug.tsx hoàn chỉnh.");
 
 // 5. Kiểm tra CSS
@@ -67,7 +84,15 @@ console.log("   ✓ CSS đầy đủ, đúng vị trí.");
 // 6. Kiểm tra các từ khóa cấm
 console.log("6. Kiểm tra không chứa các từ khóa cấm...");
 const allCode = [drawerCode, chromeCode, controlsCode, routeCode, css].join("\n");
-for (const banned of ["sourceList", "apiCode", "source-pill", "Nguồn phát", "API player đang dùng", "onSelectSource", "onOpenSourceList"]) {
+for (const banned of [
+  "sourceList",
+  "apiCode",
+  "source-pill",
+  "Nguồn phát",
+  "API player đang dùng",
+  "onSelectSource",
+  "onOpenSourceList",
+]) {
   assert(!allCode.includes(banned), `LỖI: Phát hiện từ khóa cấm: ${banned}`);
 }
 console.log("   ✓ Hoàn toàn sạch từ khóa cấm.");

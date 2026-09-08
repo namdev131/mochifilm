@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Pool, type PoolClient } from "pg";
 
-const ADMIN_EMAIL = "lacviet55@proton.me";
+const ADMIN_EMAILS = new Set(["lacviet55@proton.me", "admin@mochifilm.vn"]);
 const PERMISSIONS = [
   "users.view",
   "users.manage",
@@ -43,7 +43,7 @@ async function verifyActor(request: Request): Promise<Actor | null> {
   };
   if (!user.id || !user.email) return null;
   const email = user.email.toLowerCase();
-  const isMainAdmin = email === ADMIN_EMAIL;
+  const isMainAdmin = ADMIN_EMAILS.has(email) || user.app_metadata?.role === "admin";
   const isDeputy = user.app_metadata?.role === "deputy_admin";
   const permissions = isDeputy
     ? new Set<string>(
@@ -66,14 +66,14 @@ function can(actor: Actor, permission: Permission) {
 async function listUsers() {
   const { rows } = await db().query(
     `select u.id, u.email, u.raw_user_meta_data->>'display_name' as display_name,
-            case when lower(u.email)=$1 then 'admin'
+            case when lower(u.email)=any($1) or u.raw_app_meta_data->>'role'='admin' then 'admin'
                  when u.raw_app_meta_data->>'role'='deputy_admin' then 'deputy_admin'
                  else 'member' end as role,
             u.created_at, u.last_sign_in_at, u.banned_until,
             coalesce(array_remove(array_agg(sp.permission),null),'{}') as permissions
      from auth.users u left join public.staff_permissions sp on sp.user_id=u.id
      group by u.id order by u.created_at desc limit 500`,
-    [ADMIN_EMAIL],
+    [Array.from(ADMIN_EMAILS)],
   );
   return rows;
 }
@@ -303,7 +303,7 @@ async function handler(request: Request) {
       const target = await db().query("select lower(email) email from auth.users where id=$1", [
         id,
       ]);
-      if (!id || id === actor.id || target.rows[0]?.email === ADMIN_EMAIL)
+      if (!id || id === actor.id || ADMIN_EMAILS.has(target.rows[0]?.email))
         return json({ error: "Không thể xóa Admin chính" }, 403);
       const response = await fetch(`${supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(id)}`, {
         method: "DELETE",
@@ -320,7 +320,7 @@ async function handler(request: Request) {
         id,
       ]);
       if (!target.rowCount) return json({ error: "Không tìm thấy tài khoản" }, 404);
-      if (target.rows[0].email === ADMIN_EMAIL)
+      if (ADMIN_EMAILS.has(target.rows[0].email))
         return json({ error: "Không thể thao tác với Admin chính" }, 403);
       return transaction(async (client) => {
         await client.query(
@@ -347,7 +347,7 @@ async function handler(request: Request) {
           [id],
         );
         if (!target.rowCount) return json({ error: "Không tìm thấy tài khoản" }, 404);
-        if (target.rows[0].email === ADMIN_EMAIL)
+        if (ADMIN_EMAILS.has(target.rows[0].email))
           return json({ error: "Admin chính luôn có toàn quyền" }, 403);
         if (target.rows[0].role !== "deputy_admin")
           return json({ error: "Chỉ cấp quyền cho Phó Admin" }, 400);

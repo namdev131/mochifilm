@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 
-const ADMIN_EMAIL = "lacviet55@proton.me";
+const ADMIN_EMAILS = new Set(["lacviet55@proton.me", "admin@mochifilm.vn"]);
 
 export const current = query({
   args: {},
@@ -31,7 +31,7 @@ export const syncCurrent = mutation({
       email,
       displayName,
       avatarUrl: identity.pictureUrl,
-      role: email === ADMIN_EMAIL ? ("admin" as const) : ("member" as const),
+      role: email && ADMIN_EMAILS.has(email) ? ("admin" as const) : ("member" as const),
     };
 
     if (existing) {

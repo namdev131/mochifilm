@@ -9,11 +9,11 @@ export type SourceId =
   | "animapper";
 export type SourceFilter = SourceId | "all";
 
-
 export interface MovieCard {
   slug: string;
   name: string;
   origin_name?: string;
+  content?: string;
   poster: string;
   thumb: string;
   year?: number | string;

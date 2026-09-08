@@ -8,6 +8,7 @@
   color-scheme: dark;
   background: var(--admin-bg);
   color: var(--admin-text);
+  font-family: var(--font-ui, "Be Vietnam Pro", sans-serif);
 }
 
 [data-admin-theme="light"] {

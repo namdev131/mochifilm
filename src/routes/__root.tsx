@@ -23,7 +23,7 @@ export const Route = createRootRoute({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&family=Fredoka:wght@500;600;700&display=swap",
       },
     ],
   }),
@@ -61,6 +61,16 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="vi" className="dark">
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("mochi_theme");if(t==="light"||t==="dark"){document.documentElement.className=t;}}catch(e){}})();`,
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if("serviceWorker" in navigator){addEventListener("load",function(){navigator.serviceWorker.register("/sw.js")})}`,
+          }}
+        />
       </head>
       <body className="bg-[#09090d] text-zinc-100 antialiased selection:bg-pink-500 selection:text-white">
         {children}
