@@ -1,0 +1,38 @@
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(channel="msedge", headless=True)
+    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    page.set_default_navigation_timeout(60000)
+    base = "http://127.0.0.1:5174"
+    page.goto(base + "/search?q=love&source=kkphim")
+    cards = page.locator('a[href*="/movie/"]')
+    cards.first.wait_for(timeout=60000)
+    first = cards.count()
+    assert first > 6, first
+    page.get_by_role("button", name="Tải thêm kết quả").click()
+    page.wait_for_function('(count) => document.querySelectorAll(\'a[href*="/movie/"]\').length > count', arg=first)
+    print("PASS desktop + pagination:", first, cards.count())
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
+    print("PASS mobile: no horizontal overflow")
+    page.get_by_role("searchbox").fill("zzzznomoviematch987654321")
+    page.get_by_role("button", name="Tìm kiếm", exact=True).click()
+    page.get_by_text("Không tìm thấy phim phù hợp.", exact=False).wait_for(timeout=60000)
+    page.reload()
+    page.get_by_text("Không tìm thấy phim phù hợp.", exact=False).wait_for(timeout=60000)
+    print("PASS empty results + refresh")
+    page.goto(base + "/search")
+    page.get_by_text("Nhập từ khóa để tìm phim.").wait_for()
+    page.goto(base + "/")
+    page.get_by_placeholder("Tìm kiếm phim bom tấn, anime, diễn viên...").fill("naruto")
+    page.wait_for_timeout(1500)
+    field = page.get_by_placeholder("Tìm kiếm phim bom tấn, anime, diễn viên...")
+    field.fill("naruto")
+    field.focus()
+    print("home search links:", page.locator('a[href*="/search"]').count(), flush=True)
+    page.get_by_role("link", name="Xem tất cả kết quả cho").click()
+    page.wait_for_url("**/search?**")
+    assert "q=naruto" in page.url
+    print("PASS home view-all navigation:", page.url)
+    browser.close()

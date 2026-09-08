@@ -51,9 +51,11 @@ export async function vsmovLatest(page = 1): Promise<MovieCard[]> {
   return items.map(toCard);
 }
 
-export async function vsmovSearch(q: string, limit = 24): Promise<MovieCard[]> {
-  const r = await fetch(`${VSMOV_BASE}/tim-kiem?keyword=${encodeURIComponent(q)}&limit=${limit}`);
-  if (!r.ok) return [];
+export async function vsmovSearch(q: string, limit = 24, page = 1): Promise<MovieCard[]> {
+  const r = await fetch(
+    `${VSMOV_BASE}/tim-kiem?keyword=${encodeURIComponent(q)}&limit=${limit}&page=${page}`,
+  );
+  if (!r.ok) throw new Error(`Search failed: ${r.status}`);
   const j = await r.json();
   const items = j?.items || j?.data?.items || [];
   return items.map(toCard);

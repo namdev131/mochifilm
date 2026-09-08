@@ -192,15 +192,16 @@ export async function fetchLatest(source: SourceId, page = 1): Promise<MovieCard
   });
 }
 
-export async function searchMovies(q: string, source: SourceId): Promise<MovieCard[]> {
+export async function searchMovies(q: string, source: SourceId, page = 1): Promise<MovieCard[]> {
   if (!q.trim()) return [];
   if (source === "aiphim" || source === "thuongkhung3d" || source === "animapper") {
-    return publicApiSearch(q, source);
+    return publicApiSearch(q, source, page);
   }
   if (source === "kkphim") {
     const r = await fetch(
-      `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(q)}&limit=24`,
+      `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(q)}&limit=24&page=${page}`,
     );
+    if (!r.ok) throw new Error(`Search failed: ${r.status}`);
     const j = await r.json();
     const items = j?.data?.items || [];
     return items.map((m: any): MovieCard => {
@@ -242,8 +243,9 @@ export async function searchMovies(q: string, source: SourceId): Promise<MovieCa
   }
   if (source === "ophim") {
     const r = await fetch(
-      `https://ophim1.com/v1/api/tim-kiem?keyword=${encodeURIComponent(q)}&limit=24`,
+      `https://ophim1.com/v1/api/tim-kiem?keyword=${encodeURIComponent(q)}&limit=24&page=${page}`,
     );
+    if (!r.ok) throw new Error(`Search failed: ${r.status}`);
     const j = await r.json();
     const items = j?.data?.items || [];
     return items.map((m: any): MovieCard => {
@@ -282,10 +284,11 @@ export async function searchMovies(q: string, source: SourceId): Promise<MovieCa
       };
     });
   }
-  if (source === "vsmov") return vsmovSearch(q);
+  if (source === "vsmov") return vsmovSearch(q, 24, page);
   const r = await fetch(
-    `https://phim.nguonc.com/api/films/search?keyword=${encodeURIComponent(q)}`,
+    `https://phim.nguonc.com/api/films/search?keyword=${encodeURIComponent(q)}&page=${page}`,
   );
+  if (!r.ok) throw new Error(`Search failed: ${r.status}`);
   const j = await r.json();
   return (j.items || []).map((m: any): MovieCard => {
     const totalEp =
@@ -542,16 +545,25 @@ function relevance(m: MovieCard, q: string): number {
   return Math.max(0, Math.min(100, best));
 }
 
-export async function searchMoviesMerged(q: string, source: SourceFilter): Promise<MovieCard[]> {
+export async function searchMoviesMerged(
+  q: string,
+  source: SourceFilter,
+  page?: number,
+): Promise<MovieCard[]> {
   const keyword = q.replace(/\s+/g, " ").trim();
   if (!keyword) return [];
-  const merged =
-    source !== "all"
-      ? await searchMovies(keyword, source).catch(() => [])
-      : mergeMovies(await settled(SEARCH_SOURCES.map((s) => searchMovies(keyword, s))));
+  const responses = await Promise.allSettled(
+    (source === "all" ? SEARCH_SOURCES : [source]).map((id) => searchMovies(keyword, id, page)),
+  );
+  if (responses.every((response) => response.status === "rejected")) {
+    throw new Error("Không kết nối được nguồn phim");
+  }
+  const merged = mergeMovies(
+    responses.flatMap((response) => (response.status === "fulfilled" ? [response.value] : [])),
+  );
   return merged
     .map((m, i) => ({ m, i, score: relevance(m, keyword) }))
-    .filter((x) => x.score > 0)
+    .filter((x) => page !== undefined || x.score > 0)
     .sort((a, b) => b.score - a.score || a.i - b.i)
     .map((x) => x.m);
 }

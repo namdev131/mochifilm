@@ -98,19 +98,25 @@ export async function publicApiLatest(source: PublicSource, page = 1): Promise<M
   return (body.results || []).map((m: any) => aniCard(m, source));
 }
 
-export async function publicApiSearch(q: string, source: PublicSource): Promise<MovieCard[]> {
+export async function publicApiSearch(
+  q: string,
+  source: PublicSource,
+  page = 1,
+): Promise<MovieCard[]> {
   const keyword = encodeURIComponent(q.trim());
 
   if (source === "aiphim") {
-    const body = await json(`${PUBLIC_API_SOURCES.aiphim.base}/search?q=${keyword}`);
+    const body = await json(`${PUBLIC_API_SOURCES.aiphim.base}/search?q=${keyword}&page=${page}`);
     return (body.data?.movies || body.data || []).map((m: any) => aiCard(m, source));
   }
   if (source === "thuongkhung3d") {
-    const body = await json(`${PUBLIC_API_SOURCES.thuongkhung3d.base}/movies/search?q=${keyword}`);
+    const body = await json(
+      `${PUBLIC_API_SOURCES.thuongkhung3d.base}/movies/search?q=${keyword}&page=${page}`,
+    );
     return (body.data || []).map((m: any) => aiCard(m, source));
   }
   const body = await json(
-    `${PUBLIC_API_SOURCES.animapper.base}/search?title=${keyword}&mediaType=ANIME&limit=24`,
+    `${PUBLIC_API_SOURCES.animapper.base}/search?title=${keyword}&mediaType=ANIME&limit=24&offset=${(page - 1) * 24}`,
   );
   return (body.results || []).map((m: any) => aniCard(m, source));
 }

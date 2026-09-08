@@ -78,8 +78,8 @@ export const PlayerTopbar: React.FC<PlayerTopbarProps> = ({ unreadCount = 0, onS
     if (!q) return;
     setShowDropdown(false);
     navigate({
-      to: "/",
-      search: { q },
+      to: "/search",
+      search: { q, source: "all" },
     });
   };
 

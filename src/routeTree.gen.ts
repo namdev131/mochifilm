@@ -14,6 +14,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as LegalRouteImport } from './routes/legal'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as ApiAdminRouteImport } from './routes/api/admin'
 import { Route as ApiEpisodeWatcherRouteImport } from './routes/api/episode-watcher'
 import { Route as ApiRatingsRouteImport } from './routes/api/ratings'
@@ -46,6 +47,11 @@ const AuthRoute = AuthRouteImport.update({
 const LegalRoute = LegalRouteImport.update({
   id: '/legal',
   path: '/legal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminRoute = ApiAdminRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/legal': typeof LegalRoute
+  '/search': typeof SearchRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
   '/api/ratings': typeof ApiRatingsRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/legal': typeof LegalRoute
+  '/search': typeof SearchRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
   '/api/ratings': typeof ApiRatingsRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/legal': typeof LegalRoute
+  '/search': typeof SearchRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
   '/api/ratings': typeof ApiRatingsRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/legal'
+    | '/search'
     | '/api/admin'
     | '/api/episode-watcher'
     | '/api/ratings'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/legal'
+    | '/search'
     | '/api/admin'
     | '/api/episode-watcher'
     | '/api/ratings'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/legal'
+    | '/search'
     | '/api/admin'
     | '/api/episode-watcher'
     | '/api/ratings'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   LegalRoute: typeof LegalRoute
+  SearchRoute: typeof SearchRoute
   ApiAdminRoute: typeof ApiAdminRoute
   ApiEpisodeWatcherRoute: typeof ApiEpisodeWatcherRoute
   ApiRatingsRoute: typeof ApiRatingsRoute
@@ -234,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/legal'
       fullPath: '/legal'
       preLoaderRoute: typeof LegalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin': {
@@ -301,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   LegalRoute: LegalRoute,
+  SearchRoute: SearchRoute,
   ApiAdminRoute: ApiAdminRoute,
   ApiEpisodeWatcherRoute: ApiEpisodeWatcherRoute,
   ApiRatingsRoute: ApiRatingsRoute,

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useMemo, useRef, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAppAuth } from "@/lib/auth-data-provider";
@@ -2534,15 +2534,12 @@ export function HomePage() {
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      setShowSearchDropdown(true);
-                      const trimmedQ = searchQuery.trim();
-                      navigate({
-                        search: (prev) => ({
-                          ...prev,
-                          q: trimmedQ || undefined,
-                        }),
-                        replace: false,
-                      }).catch(() => {});
+                      if (!searchQuery.trim()) return;
+                      setShowSearchDropdown(false);
+                      void navigate({
+                        to: "/search",
+                        search: { q: searchQuery.trim(), source: selectedSource },
+                      });
                     }
                   }}
                   onFocus={() => setShowSearchDropdown(true)}
@@ -2660,39 +2657,14 @@ export function HomePage() {
                     )}
                   </div>
 
-                  {searchResults.length > 0 && (
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => {
-                        setShowSearchDropdown(false);
-                        const trimmedQ = searchQuery.trim();
-                        navigate({
-                          search: (prev) => ({
-                            ...prev,
-                            q: trimmedQ || undefined,
-                          }),
-                          replace: false,
-                        }).catch(() => {});
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          setShowSearchDropdown(false);
-                          const trimmedQ = searchQuery.trim();
-                          navigate({
-                            search: (prev) => ({
-                              ...prev,
-                              q: trimmedQ || undefined,
-                            }),
-                            replace: false,
-                          }).catch(() => {});
-                        }
-                      }}
-                      className="px-3 py-2 text-center text-xs font-semibold text-pink-400 hover:text-pink-300 hover:bg-white/[0.04] border-t border-white/[0.04] cursor-pointer transition"
-                    >
-                      Xem tất cả kết quả cho "{searchQuery.trim()}" ›
-                    </div>
-                  )}
+                  <Link
+                    to="/search"
+                    search={{ q: searchQuery.trim(), source: selectedSource }}
+                    onClick={() => setShowSearchDropdown(false)}
+                    className="block px-3 py-2 text-center text-xs font-semibold text-pink-400 hover:text-pink-300 hover:bg-white/[0.04] border-t border-white/[0.04] transition"
+                  >
+                    Xem tất cả kết quả cho "{searchQuery.trim()}" ›
+                  </Link>
                 </div>
               )}
             </div>

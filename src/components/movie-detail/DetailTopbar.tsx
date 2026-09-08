@@ -91,8 +91,8 @@ export const DetailTopbar: React.FC<DetailTopbarProps> = ({ onShowToast }) => {
     setShowDropdown(false);
     onShowToast?.(`Tìm kiếm: ${q}`);
     navigate({
-      to: "/",
-      search: { q },
+      to: "/search",
+      search: { q, source: "all" },
     });
   };
 
