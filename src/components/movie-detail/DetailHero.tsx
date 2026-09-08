@@ -27,8 +27,8 @@ export const DetailHero: React.FC<DetailHeroProps> = ({
 }) => {
   const backdropUrl = movie.thumb || movie.poster;
   const hasRealRating =
-    (movie as any).vote_average !== undefined && Number((movie as any).vote_average) > 0;
-  const ratingValue = hasRealRating ? Number((movie as any).vote_average).toFixed(1) : null;
+    movie.vote_average != null && Number.isFinite(movie.vote_average) && movie.vote_average > 0;
+  const ratingValue = hasRealRating ? Number(movie.vote_average).toFixed(1) : null;
 
   const cleanSummary = movie.content
     ? movie.content
@@ -65,7 +65,21 @@ export const DetailHero: React.FC<DetailHeroProps> = ({
           {movie.origin_name && <div className="subtitle">{movie.origin_name}</div>}
 
           <div className="meta">
-            {ratingValue && <span className="tag rate">★ {ratingValue}</span>}
+            {ratingValue && (
+              <span className="tag rate">
+                ★ {ratingValue} / 10 · {movie.metadata_provider || "Nguồn phim"}
+              </span>
+            )}
+            {movie.metadata_url && (
+              <a
+                href={movie.metadata_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="tag"
+              >
+                Dữ liệu: {movie.metadata_provider}
+              </a>
+            )}
             {movie.year && <span className="tag">{movie.year}</span>}
             {movie.time && <span className="tag">{movie.time}</span>}
             {movie.category?.slice(0, 4).map((cat) => (

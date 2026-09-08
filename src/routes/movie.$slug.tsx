@@ -49,7 +49,7 @@ function MovieDetailPage() {
 
   // Fetch movie details
   const {
-    data: movie,
+    data: sourceMovie,
     isLoading,
     error,
   } = useQuery({
@@ -58,6 +58,45 @@ function MovieDetailPage() {
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
+
+  const { data: enrichment } = useQuery({
+    queryKey: [
+      "movieMetadata",
+      slug,
+      currentSource,
+      sourceMovie?.origin_name || sourceMovie?.name,
+      sourceMovie?.year,
+      sourceMovie?.servers.length,
+    ],
+    enabled: Boolean(
+      sourceMovie && ["single", "series", "tvshows"].includes(sourceMovie.type || ""),
+    ),
+    queryFn: async () => {
+      const params = new URLSearchParams({ title: sourceMovie!.origin_name || sourceMovie!.name });
+      if (sourceMovie!.year) params.set("year", String(sourceMovie!.year));
+      params.set("type", sourceMovie!.type === "single" ? "movie" : "tv");
+      const response = await fetch(`/api/movie-metadata?${params}`);
+      if (!response.ok) throw new Error("Không tải được dữ liệu bổ sung");
+      return response.json();
+    },
+    staleTime: 60 * 60 * 1000,
+    retry: false,
+  });
+  const extra = enrichment?.metadata;
+  const movie =
+    sourceMovie && extra
+      ? {
+          ...sourceMovie,
+          vote_average: extra.vote_average,
+          metadata_provider: extra.provider,
+          metadata_url: extra.url,
+          actors: extra.actors?.length ? extra.actors : sourceMovie.actors,
+          director: extra.director?.length ? extra.director : sourceMovie.director,
+          content: sourceMovie.content || extra.content,
+          time: sourceMovie.time || extra.time,
+          category: sourceMovie.category?.length ? sourceMovie.category : extra.category,
+        }
+      : sourceMovie;
 
   // Fetch recommendations from current source
   const { data: latestMovies = [] } = useQuery({

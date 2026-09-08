@@ -339,6 +339,7 @@ export async function fetchDetail(slug: string, source: SourceId): Promise<Movie
     return {
       slug: m.slug,
       name: m.name,
+      type: m.type,
       origin_name: m.origin_name,
       poster: kkImg(m.poster_url),
       thumb: kkImg(m.thumb_url),
@@ -363,6 +364,7 @@ export async function fetchDetail(slug: string, source: SourceId): Promise<Movie
     return {
       slug: m.slug,
       name: m.name,
+      type: m.type,
       origin_name: m.origin_name,
       poster: ophimImg(m.poster_url),
       thumb: ophimImg(m.thumb_url),

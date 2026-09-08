@@ -56,6 +56,10 @@ export interface MovieDetail {
   time?: string;
   category?: string[];
   country?: string[];
+  vote_average?: number | null;
+  type?: string;
+  metadata_provider?: string;
+  metadata_url?: string;
   actors?: string[];
   director?: string[];
   servers: EpisodeServer[];

@@ -17,6 +17,7 @@ import { Route as LegalRouteImport } from './routes/legal'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ApiAdminRouteImport } from './routes/api/admin'
 import { Route as ApiEpisodeWatcherRouteImport } from './routes/api/episode-watcher'
+import { Route as ApiMovieMetadataRouteImport } from './routes/api/movie-metadata'
 import { Route as ApiRatingsRouteImport } from './routes/api/ratings'
 import { Route as ApiWatchHistoryRouteImport } from './routes/api/watch-history'
 import { Route as ApiWatchPartyRouteImport } from './routes/api/watch-party'
@@ -64,6 +65,11 @@ const ApiEpisodeWatcherRoute = ApiEpisodeWatcherRouteImport.update({
   path: '/api/episode-watcher',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMovieMetadataRoute = ApiMovieMetadataRouteImport.update({
+  id: '/api/movie-metadata',
+  path: '/api/movie-metadata',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRatingsRoute = ApiRatingsRouteImport.update({
   id: '/api/ratings',
   path: '/api/ratings',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
+  '/api/movie-metadata': typeof ApiMovieMetadataRoute
   '/api/ratings': typeof ApiRatingsRoute
   '/api/watch-history': typeof ApiWatchHistoryRoute
   '/api/watch-party': typeof ApiWatchPartyRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
+  '/api/movie-metadata': typeof ApiMovieMetadataRoute
   '/api/ratings': typeof ApiRatingsRoute
   '/api/watch-history': typeof ApiWatchHistoryRoute
   '/api/watch-party': typeof ApiWatchPartyRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
+  '/api/movie-metadata': typeof ApiMovieMetadataRoute
   '/api/ratings': typeof ApiRatingsRoute
   '/api/watch-history': typeof ApiWatchHistoryRoute
   '/api/watch-party': typeof ApiWatchPartyRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/api/admin'
     | '/api/episode-watcher'
+    | '/api/movie-metadata'
     | '/api/ratings'
     | '/api/watch-history'
     | '/api/watch-party'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/api/admin'
     | '/api/episode-watcher'
+    | '/api/movie-metadata'
     | '/api/ratings'
     | '/api/watch-history'
     | '/api/watch-party'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/api/admin'
     | '/api/episode-watcher'
+    | '/api/movie-metadata'
     | '/api/ratings'
     | '/api/watch-history'
     | '/api/watch-party'
@@ -204,6 +216,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   ApiAdminRoute: typeof ApiAdminRoute
   ApiEpisodeWatcherRoute: typeof ApiEpisodeWatcherRoute
+  ApiMovieMetadataRoute: typeof ApiMovieMetadataRoute
   ApiRatingsRoute: typeof ApiRatingsRoute
   ApiWatchHistoryRoute: typeof ApiWatchHistoryRoute
   ApiWatchPartyRoute: typeof ApiWatchPartyRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEpisodeWatcherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/movie-metadata': {
+      id: '/api/movie-metadata'
+      path: '/api/movie-metadata'
+      fullPath: '/api/movie-metadata'
+      preLoaderRoute: typeof ApiMovieMetadataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ratings': {
       id: '/api/ratings'
       path: '/api/ratings'
@@ -324,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   ApiAdminRoute: ApiAdminRoute,
   ApiEpisodeWatcherRoute: ApiEpisodeWatcherRoute,
+  ApiMovieMetadataRoute: ApiMovieMetadataRoute,
   ApiRatingsRoute: ApiRatingsRoute,
   ApiWatchHistoryRoute: ApiWatchHistoryRoute,
   ApiWatchPartyRoute: ApiWatchPartyRoute,
