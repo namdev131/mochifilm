@@ -91,8 +91,8 @@ async function deleteStaleParties() {
 type CurrentUser = { id: string; email?: string; role?: string };
 async function currentUser(request: Request): Promise<CurrentUser | null> {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
   if (!token || !url || !key) return null;
   const response = await fetch(`${url}/auth/v1/user`, {
     headers: { apikey: key, authorization: `Bearer ${token}` },

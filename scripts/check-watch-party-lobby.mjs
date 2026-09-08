@@ -48,6 +48,8 @@ assert.match(api, /HOST_ABSENCE_TIMEOUT_MINUTES = 5/);
 assert.match(api, /delete from public\.watch_parties/);
 assert.match(api, /last_host_seen_at < now\(\) -/);
 assert.match(api, /body\.action === "host-heartbeat"/);
+assert.match(api, /process\.env\.VITE_SUPABASE_URL/);
+assert.match(api, /process\.env\.VITE_SUPABASE_PUBLISHABLE_KEY/);
 assert.match(api, /body\.action === "list"/);
 assert.match(api, /member_count/);
 assert.match(api, /password_hash/);
