@@ -66,7 +66,7 @@ export async function metadataResponse(request: Request): Promise<Response> {
       if (matches.length === 1 && Number.isInteger(matches[0].id)) {
         const detail = await json(
           new URL(
-            `https://api.themoviedb.org/3/${type}/${matches[0].id}?append_to_response=credits&language=vi-VN`,
+            `https://api.themoviedb.org/3/${type}/${matches[0].id}?append_to_response=credits,videos&language=vi-VN`,
           ),
           headers,
         );
@@ -74,6 +74,16 @@ export async function metadataResponse(request: Request): Promise<Response> {
           {
             status: "ok",
             metadata: {
+              trailer_url: (() => {
+                const video = detail.videos?.results?.find(
+                  (v: { site: string; type: string; official: boolean; key: string }) =>
+                    v.site === "YouTube" &&
+                    v.type === "Trailer" &&
+                    v.official &&
+                    /^[\w-]{11}$/.test(v.key),
+                );
+                return video ? `https://www.youtube.com/watch?v=${video.key}` : undefined;
+              })(),
               provider: "TMDB",
               url: `https://www.themoviedb.org/${type}/${detail.id}`,
               vote_average:

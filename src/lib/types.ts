@@ -58,6 +58,7 @@ export interface MovieDetail {
   country?: string[];
   vote_average?: number | null;
   type?: string;
+  trailer_url?: string;
   metadata_provider?: string;
   metadata_url?: string;
   actors?: string[];

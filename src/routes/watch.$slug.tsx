@@ -3,7 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { SourceId, EpisodeServerItem, MovieCard } from "@/lib/types";
 import { fetchDetail, fetchLatest, SOURCES } from "@/lib/api";
+import { getSourceOrder, rememberSuccessfulSource, useMochiSettings } from "@/lib/mochi-settings";
 import { supabase } from "@/lib/supabase";
+import { useConvexAuth, useMutation, useQuery as useConvexQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 import "@/styles/player.css";
 import "@/styles/player-controls.css";
@@ -25,7 +28,7 @@ export interface WatchSearchParams {
 
 export const Route = createFileRoute("/watch/$slug")({
   validateSearch: (search: Record<string, unknown>): WatchSearchParams => ({
-    source: (search.source as SourceId) || "kkphim",
+    source: typeof search.source === "string" ? search.source as SourceId : undefined,
     ep:
       typeof search.ep === "number"
         ? search.ep
@@ -47,14 +50,22 @@ function WatchPlayerPage() {
   const { slug } = Route.useParams();
   const search = Route.useSearch();
   const navigate = useNavigate();
+  const { isAuthenticated } = useConvexAuth();
+  const cloudHistory = useConvexQuery(api.watchHistory.get, isAuthenticated ? { slug } : "skip");
+  const cloudFavorites = useConvexQuery(api.favorites.list, isAuthenticated ? {} : "skip");
+  const saveHistory = useMutation(api.watchHistory.save);
+  const setCloudFavorite = useMutation(api.favorites.set);
+  const removeCloudFavorite = useMutation(api.favorites.remove);
+  const settings = useMochiSettings();
 
-  const currentSource: SourceId = search.source || "kkphim";
+  const currentSource: SourceId = search.source || getSourceOrder(slug)[0] || "kkphim";
   const epIndex = search.ep ?? 0;
   const srvIndex = search.srv ?? 0;
 
   // Toast
   const [toastMessage, setToastMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
+  const [isPartyGuest, setIsPartyGuest] = useState(false);
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const triggerToast = (msg: string) => {
@@ -78,6 +89,19 @@ function WatchPlayerPage() {
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
+
+  useEffect(() => {
+    if (movie) rememberSuccessfulSource(slug, currentSource);
+  }, [movie, slug, currentSource]);
+
+  useEffect(() => {
+    if (!error || !settings.sourceFallback || search.party) return;
+    const order = getSourceOrder(slug, currentSource);
+    const next = order[order.indexOf(currentSource) + 1];
+    if (!next) return;
+    triggerToast(`Nguồn ${currentSource.toUpperCase()} gặp lỗi. Đang chuyển sang ${next.toUpperCase()}...`);
+    void navigate({ to: "/watch/$slug", params: { slug }, search: { source: next, srv: 0, ep: 0 } });
+  }, [error, settings.sourceFallback, currentSource, slug, search.party]);
 
   // Recommendations query
   const { data: latestMovies = [] } = useQuery({
@@ -111,45 +135,37 @@ function WatchPlayerPage() {
     } as never);
   }, [movie?.slug, currentSource]);
 
-  // Favorites state synced with localStorage
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("lv-favorites") || "[]";
-      const favs = JSON.parse(raw);
-      setIsFavorite(favs.some((f: any) => f.slug === slug));
-    } catch {
-      // ignore
+    if (isAuthenticated && cloudFavorites) {
+      setIsFavorite(cloudFavorites.some((favorite) => favorite.slug === slug));
+      return;
     }
-  }, [slug]);
+    try {
+      const favs = JSON.parse(localStorage.getItem("lv-favorites") || "[]");
+      setIsFavorite(favs.some((favorite: MovieCard) => favorite.slug === slug));
+    } catch {
+      setIsFavorite(false);
+    }
+  }, [slug, isAuthenticated, cloudFavorites]);
 
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
     if (!movie) return;
     try {
-      const raw = localStorage.getItem("lv-favorites") || "[]";
-      let favs: MovieCard[] = JSON.parse(raw);
-      const exists = favs.some((f) => f.slug === slug);
-      if (exists) {
-        favs = favs.filter((f) => f.slug !== slug);
-        setIsFavorite(false);
-        triggerToast("Đã bỏ khỏi yêu thích");
+      if (isAuthenticated) {
+        if (isFavorite) await removeCloudFavorite({ slug });
+        else await setCloudFavorite({ slug, name: movie.name, poster: movie.poster, source: currentSource });
       } else {
-        favs.push({
-          slug: movie.slug,
-          name: movie.name,
-          origin_name: movie.origin_name,
-          poster: movie.poster,
-          thumb: movie.thumb,
-          source: currentSource,
-          year: movie.year,
-          quality: movie.quality,
-        });
-        setIsFavorite(true);
-        triggerToast("Đã thêm vào yêu thích");
+        const favs: MovieCard[] = JSON.parse(localStorage.getItem("lv-favorites") || "[]");
+        const next = isFavorite
+          ? favs.filter((favorite) => favorite.slug !== slug)
+          : [...favs, { slug: movie.slug, name: movie.name, origin_name: movie.origin_name, poster: movie.poster, thumb: movie.thumb, source: currentSource, year: movie.year, quality: movie.quality }];
+        localStorage.setItem("lv-favorites", JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent("lv-favorites-sync"));
       }
-      localStorage.setItem("lv-favorites", JSON.stringify(favs));
-      window.dispatchEvent(new CustomEvent("lv-favorites-sync"));
+      setIsFavorite(!isFavorite);
+      triggerToast(isFavorite ? "Đã bỏ khỏi yêu thích" : "Đã thêm vào yêu thích");
     } catch {
       triggerToast("Không thể cập nhật danh sách yêu thích");
     }
@@ -159,24 +175,24 @@ function WatchPlayerPage() {
   const [initialPosition, setInitialPosition] = useState<number>(0);
 
   useEffect(() => {
+    if (!settings.rememberProgress) { setInitialPosition(0); return; }
     try {
       const raw = localStorage.getItem("lv-progress") || "{}";
       const map = JSON.parse(raw);
       const key = `${currentSource}:${slug}:${srvIndex}:${epIndex}`;
-      const savedPos = map[key]?.position;
-      if (typeof savedPos === "number" && savedPos > 0) {
-        setInitialPosition(savedPos);
-      } else {
-        setInitialPosition(0);
-      }
+      const localPosition = Number(map[key]?.position) || 0;
+      const cloudPosition = cloudHistory?.source === currentSource && cloudHistory.epIndex === epIndex && cloudHistory.srvIndex === srvIndex
+        ? cloudHistory.positionSeconds
+        : 0;
+      setInitialPosition(Math.max(localPosition, cloudPosition));
     } catch {
-      setInitialPosition(0);
+      setInitialPosition(cloudHistory?.positionSeconds || 0);
     }
-  }, [slug, currentSource, srvIndex, epIndex]);
+  }, [slug, currentSource, srvIndex, epIndex, cloudHistory, settings.rememberProgress]);
 
   // Synchronize and record watch history when movie and episode load (real data, zero mock numbers)
   useEffect(() => {
-    if (!movie || !currentEp) return;
+    if (!movie || !currentEp || !settings.rememberProgress) return;
     try {
       const raw = localStorage.getItem("lv-progress") || "{}";
       const map = JSON.parse(raw);
@@ -204,7 +220,7 @@ function WatchPlayerPage() {
     } catch {
       // ignore
     }
-  }, [movie?.slug, currentEp?.name, currentSource, srvIndex, epIndex]);
+  }, [movie?.slug, currentEp?.name, currentSource, srvIndex, epIndex, settings.rememberProgress]);
 
   // Real watch progress updates as video plays (throttled & debounced from HTMLVideoElement)
   const lastSavedSecRef = useRef<number>(0);
@@ -212,7 +228,7 @@ function WatchPlayerPage() {
   const currentProgressRef = useRef<{ cur: number; dur: number }>({ cur: 0, dur: 0 });
 
   const persistProgress = (currSec: number, totalSec: number) => {
-    if (!movie || !currentEp) return;
+    if (!movie || !currentEp || !settings.rememberProgress) return;
     const cur = Math.max(0, Math.floor(isFinite(currSec) && !isNaN(currSec) ? currSec : 0));
     const dur = Math.max(0, Math.floor(isFinite(totalSec) && !isNaN(totalSec) ? totalSec : 0));
 
@@ -241,6 +257,19 @@ function WatchPlayerPage() {
       };
       localStorage.setItem("lv-progress", JSON.stringify(map));
       window.dispatchEvent(new CustomEvent("lv-history-sync"));
+      if (isAuthenticated)
+        void saveHistory({
+          slug: movie.slug,
+          name: movie.name,
+          poster: movie.poster || movie.thumb,
+          source: currentSource,
+          episodeSlug: currentEp.slug,
+          episodeName: currentEp.name,
+          positionSeconds: cur,
+          durationSeconds: finalDur,
+          epIndex,
+          srvIndex,
+        });
       lastSavedSecRef.current = cur;
     } catch {
       // ignore
@@ -409,7 +438,7 @@ function WatchPlayerPage() {
                 navigate({
                   to: "/watch/$slug",
                   params: { slug },
-                  search: { source: currentSource, srv, ep },
+                  search: { source: currentSource, srv, ep, party: search.party },
                 });
                 triggerToast(
                   `Chuyển sang ${movie.servers?.[srv]?.items?.[ep]?.name || `Tập ${ep + 1}`}`,
@@ -420,7 +449,7 @@ function WatchPlayerPage() {
                 navigate({
                   to: "/watch/$slug",
                   params: { slug },
-                  search: { source: newProv, srv: 0, ep: 0 },
+                  search: { source: newProv, srv: 0, ep: 0, party: search.party },
                 });
                 triggerToast(`Đang chuyển sang kho phim ${newProv.toUpperCase()}`);
               }}
@@ -433,6 +462,7 @@ function WatchPlayerPage() {
               onShowToast={triggerToast}
               onTimeProgress={handleTimeProgress}
               initialPosition={initialPosition}
+              isPartyGuest={isPartyGuest}
             />
 
             {/* Rightbar: active Watch Party room or standard episode controls */}
@@ -440,7 +470,26 @@ function WatchPlayerPage() {
               <WatchPartyRoomPanel
                 partyCode={search.party}
                 onShowToast={triggerToast}
+                activeServerIndex={srvIndex}
+                activeEpisodeIndex={epIndex}
+                onGuestChange={setIsPartyGuest}
+                onPlayback={(state) => {
+                  if (state.slug !== slug || state.source !== currentSource) {
+                    void navigate({
+                      to: "/watch/$slug",
+                      params: { slug: state.slug },
+                      search: { source: state.source as SourceId, srv: state.srv_index, ep: state.ep_index, party: search.party },
+                    });
+                  } else if (state.srv_index !== srvIndex || state.ep_index !== epIndex) {
+                    void navigate({
+                      to: "/watch/$slug",
+                      params: { slug },
+                      search: { source: currentSource, srv: state.srv_index, ep: state.ep_index, party: search.party },
+                    });
+                  }
+                }}
                 onClosed={() => {
+                  setIsPartyGuest(false);
                   navigate({
                     to: "/watch/$slug",
                     params: { slug },
@@ -462,8 +511,13 @@ function WatchPlayerPage() {
                 onPartyJoined={(party) => {
                   navigate({
                     to: "/watch/$slug",
-                    params: { slug },
-                    search: { source: currentSource, srv: srvIndex, ep: epIndex, party },
+                    params: { slug: party.slug },
+                    search: {
+                      source: party.source,
+                      srv: party.srv_index,
+                      ep: party.ep_index,
+                      party: party.code,
+                    },
                   });
                 }}
                 onSelectEpisode={(srv, ep) => {

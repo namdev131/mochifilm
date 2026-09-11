@@ -4,13 +4,13 @@ import {
   Film,
   Menu,
   MessageSquare,
-  Moon,
+
   RefreshCw,
   Search,
   Server,
   Shield,
   Sliders,
-  Sun,
+
   Users,
   X,
 } from "lucide-react";
@@ -66,7 +66,7 @@ export function AdminSidebar({
       )}
       <aside
         aria-label="Điều hướng quản trị"
-        className={`fixed inset-y-0 left-0 z-50 w-[232px] border-r border-white/10 bg-[#120c15] p-4 transition-transform ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+        className={`admin-navigation fixed inset-y-0 left-0 z-50 w-[232px] border-r border-white/10 bg-[#120c15] p-4 transition-transform ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
         <div className="flex h-14 items-center justify-between border-b border-white/10">
           <Link to="/" aria-label="Về Mochi Film">
@@ -120,8 +120,7 @@ export function AdminTopbar({
   isOfflineMode,
   onRefresh,
   isBusy,
-  theme,
-  onToggleTheme,
+
   user,
   isAdmin,
 }: {
@@ -131,8 +130,7 @@ export function AdminTopbar({
   isOfflineMode: boolean;
   onRefresh: () => void;
   isBusy: boolean;
-  theme: "dark" | "light";
-  onToggleTheme: () => void;
+
   user: User;
   isAdmin: boolean;
 }) {
@@ -170,14 +168,7 @@ export function AdminTopbar({
       >
         <RefreshCw className={`mx-auto w-4 ${isBusy ? "animate-spin" : ""}`} />
       </button>
-      <button
-        type="button"
-        onClick={onToggleTheme}
-        className="min-w-11 min-h-11 rounded-xl border border-white/10"
-        aria-label="Đổi giao diện"
-      >
-        {theme === "dark" ? <Sun className="mx-auto w-4" /> : <Moon className="mx-auto w-4" />}
-      </button>
+
       <div className="hidden md:block text-right">
         <p className="max-w-40 truncate text-xs font-bold">{user?.email}</p>
         <p className="text-[10px] text-[#e27290]">{isAdmin ? "Main Admin" : "Phó Admin"}</p>

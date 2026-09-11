@@ -28,7 +28,7 @@ type Member = {
   user_id: string;
   display_name: string;
   joined_at: string;
-  staff_role?: "admin" | "deputy_admin" | "member";
+  staff_role?: "admin" | "deputy_admin" | "vip" | "member";
 };
 
 type Message = {
@@ -37,17 +37,25 @@ type Message = {
   display_name: string;
   content: string;
   created_at: string;
-  staff_role?: "admin" | "deputy_admin" | "member";
+  staff_role?: "admin" | "deputy_admin" | "vip" | "member";
 };
 
 export function WatchPartyRoomPanel({
   partyCode,
   onShowToast,
   onClosed,
+  onPlayback,
+  activeServerIndex,
+  activeEpisodeIndex,
+  onGuestChange,
 }: {
   partyCode: string;
   onShowToast: (message: string) => void;
   onClosed: () => void;
+  onPlayback: (state: { slug: string; source: string; ep_index: number; srv_index: number }) => void;
+  activeServerIndex: number;
+  activeEpisodeIndex: number;
+  onGuestChange?: (isGuest: boolean) => void;
 }) {
   const [tab, setTab] = useState<"chat" | "members" | "rules" | "settings">("chat");
   const [room, setRoom] = useState<Room | null>(null);
@@ -95,7 +103,7 @@ export function WatchPartyRoomPanel({
           await request({
             action: "sync",
             partyId: room.id,
-            patch: { position_seconds: video.currentTime, is_playing: !video.paused },
+            patch: { position_seconds: video.currentTime, is_playing: !video.paused, ep_index: activeEpisodeIndex, srv_index: activeServerIndex },
           });
         } else {
           const result = await request({ action: "playback", partyId: room.id });
@@ -103,8 +111,9 @@ export function WatchPartyRoomPanel({
           const position =
             Number(state.position_seconds) +
             (state.is_playing
-              ? Math.max(0, (result.server_time - Date.parse(state.updated_at)) / 1000)
+              ? Math.max(0, (result.server_time - Date.parse(state.playback_updated_at)) / 1000)
               : 0);
+          onPlayback(state);
           if (Number.isFinite(position) && (manual || Math.abs(video.currentTime - position) > 2))
             video.currentTime = Number.isFinite(video.duration)
               ? Math.min(position, video.duration)
@@ -119,22 +128,26 @@ export function WatchPartyRoomPanel({
         syncing.current = false;
       }
     },
-    [room?.id, room?.is_host, request, onShowToast],
+    [room?.id, room?.is_host, request, onShowToast, onPlayback, activeServerIndex, activeEpisodeIndex],
   );
 
   useEffect(() => {
     void syncPlayback();
-    // ponytail: polling every 2s; use realtime transport if subsecond sync is required.
-    const timer = window.setInterval(() => void syncPlayback(), 2000);
-    return () => window.clearInterval(timer);
-  }, [syncPlayback]);
+    if (!room?.id) return;
+    const channel = supabase
+      .channel(`watch_party_playback_${room.id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "watch_parties", filter: `id=eq.${room.id}` }, () => void syncPlayback())
+      .subscribe();
+    const timer = window.setInterval(() => void syncPlayback(), 10_000);
+    return () => { window.clearInterval(timer); void supabase.removeChannel(channel); };
+  }, [room?.id, syncPlayback]);
 
   const load = useCallback(async () => {
     try {
       const listed = await request({ action: "list" });
       const current = listed.parties?.find((party: Room) => party.code === partyCode) as
         Room | undefined;
-      if (!current) throw new Error("Phòng không còn hoạt động");
+      if (!current) { onClosed(); throw new Error("Phòng không còn hoạt động"); }
       const [memberResult, chatResult] = await Promise.all([
         request({ action: "members-list", partyId: current.id }),
         request({ action: "chat-list", partyId: current.id }),
@@ -156,13 +169,14 @@ export function WatchPartyRoomPanel({
       knownMemberIds.current = new Set(nextMembers.map((member) => member.user_id));
       knownMessageIds.current = new Set(nextMessages.map((message) => message.id));
       setRoom(current);
+      onGuestChange?.(!current.is_host);
       setMembers(nextMembers);
       setMessages(nextMessages);
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không thể tải phòng");
     }
-  }, [partyCode, request, userId]);
+  }, [partyCode, request, userId, onClosed, onGuestChange]);
 
   useEffect(() => {
     void load();
@@ -173,9 +187,14 @@ export function WatchPartyRoomPanel({
   useEffect(() => {
     if (!room?.is_host) return;
     const heartbeat = () => void request({ action: "host-heartbeat", partyId: room.id });
+    const onVisible = () => document.visibilityState === "visible" && heartbeat();
     heartbeat();
     const timer = window.setInterval(heartbeat, 30_000);
-    return () => window.clearInterval(timer);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [request, room?.id, room?.is_host]);
 
   useEffect(() => {
@@ -273,13 +292,18 @@ export function WatchPartyRoomPanel({
           </div>
         )}
         <header className="watch-party-room-head">
-          <div>
+          <div className="watch-party-room-head-meta">
             <span>Watch Party</span>
             <strong>{partyCode}</strong>
-            <button type="button" onClick={() => void syncPlayback(true)}>
-              <RefreshCw /> Đồng bộ
-            </button>
           </div>
+          <button
+            type="button"
+            className="watch-party-sync-btn"
+            onClick={() => void syncPlayback(true)}
+            title="Đồng bộ lại trạng thái phát phim"
+          >
+            <RefreshCw /> Đồng bộ
+          </button>
         </header>
 
         <div className="watch-party-invite-actions">
@@ -346,6 +370,7 @@ export function WatchPartyRoomPanel({
                     message.user_id === userId ? "mine" : "",
                     message.staff_role === "admin" ? "watch-party-message-admin" : "",
                     message.staff_role === "deputy_admin" ? "watch-party-message-deputy" : "",
+                    message.staff_role === "vip" ? "watch-party-message-vip" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
@@ -356,8 +381,12 @@ export function WatchPartyRoomPanel({
                   <div>
                     <header>
                       <strong>{message.display_name}</strong>
-                      {message.staff_role !== "member" && (
-                        <b>{message.staff_role === "admin" ? "ADMIN" : "PHÓ ADMIN"}</b>
+                      {message.staff_role && message.staff_role !== "member" && (
+                        <b>
+                          {message.staff_role === "admin"
+                            ? "ADMIN"
+                            : message.staff_role === "vip" ? "VIP" : "PHÓ ADMIN"}
+                        </b>
                       )}
                       <time>
                         {new Date(message.created_at).toLocaleTimeString("vi-VN", {
@@ -467,6 +496,7 @@ export function WatchPartyRoomPanel({
             <span>{partyCode}</span>
             {room?.is_host && (
               <form
+                className="watch-party-qr-form"
                 onSubmit={async (event) => {
                   event.preventDefault();
                   if (busy) return;
@@ -486,19 +516,23 @@ export function WatchPartyRoomPanel({
                   }
                 }}
               >
-                <label>
-                  Mật khẩu phòng
+                <label className="watch-party-qr-label">
+                  <span>Mật khẩu phòng</span>
                   <input
                     type="password"
+                    className="watch-party-qr-input"
+                    placeholder="Nhập mật khẩu (để trống để gỡ)..."
                     autoComplete="new-password"
                     maxLength={72}
                     value={roomPassword}
                     onChange={(event) => setRoomPassword(event.target.value)}
                   />
                 </label>
-                <small>Để trống để bỏ mật khẩu. Không kèm mật khẩu trong QR.</small>
-                <button type="submit" disabled={busy}>
-                  Lưu mật khẩu
+                <small className="watch-party-qr-hint">
+                  Để trống để bỏ mật khẩu. Không kèm mật khẩu trong QR.
+                </small>
+                <button type="submit" className="watch-party-qr-submit" disabled={busy}>
+                  {busy ? "Đang lưu..." : "Lưu mật khẩu"}
                 </button>
               </form>
             )}

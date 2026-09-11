@@ -18,8 +18,8 @@
 }
 .player-page-root .watch-party-hero p {
   margin: 6px 0 0;
-  color: #a897a1;
-  font-size: 14px;
+  color: #ff9ab8;
+  font-size: 16px;
   font-family: var(--font-hand, "Dancing Script", cursive);
 }
 .player-page-root .watch-party-hero > strong {
@@ -29,7 +29,7 @@
   color: #ff96b4;
   background: rgba(255, 91, 138, 0.07);
   font-family: monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
 }
 
@@ -129,59 +129,116 @@
 }
 
 .player-page-root .watch-party-room-head {
-  min-height: 62px;
-  padding: 11px 12px;
+  min-height: 64px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 91, 138, 0.055);
+  background: linear-gradient(180deg, rgba(255, 91, 138, 0.08), rgba(255, 91, 138, 0.02));
 }
 
-.player-page-root .watch-party-room-head span,
-.player-page-root .watch-party-room-head strong {
+.player-page-root .watch-party-room-head-meta span {
   display: block;
-}
-.player-page-root .watch-party-room-head span {
-  color: #d7c8d1;
-  font-size: 10px;
+  color: #c9b8c3;
+  font-size: 10.5px;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
-.player-page-root .watch-party-room-head strong {
+
+.player-page-root .watch-party-room-head-meta strong {
+  display: block;
   margin-top: 2px;
   font-family: monospace;
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 800;
   letter-spacing: 0.16em;
   color: #ff82a7;
+  text-shadow: 0 0 14px rgba(255, 130, 167, 0.4);
+  line-height: 1.2;
 }
+
+.player-page-root .watch-party-sync-btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background: rgba(255, 79, 134, 0.12);
+  border: 1px solid rgba(255, 79, 134, 0.35);
+  color: #ff9cb7;
+  font-family: var(--font-ui, "Fredoka", sans-serif);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.player-page-root .watch-party-sync-btn:hover {
+  background: rgba(255, 79, 134, 0.22);
+  border-color: rgba(255, 79, 134, 0.6);
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(255, 79, 134, 0.4);
+  transform: translateY(-1px);
+}
+.player-page-root .watch-party-sync-btn svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.4s ease;
+}
+.player-page-root .watch-party-sync-btn:hover svg {
+  transform: rotate(180deg);
+}
+
 .player-page-root .watch-party-invite-actions {
-  padding: 10px;
+  padding: 10px 12px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
   border-bottom: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.12);
 }
 .player-page-root .watch-party-invite-actions button {
-  min-height: 40px;
-  border: 1px solid var(--line);
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  color: #f4e8ee;
+  gap: 8px;
+  color: #f5edf1;
   background: rgba(255, 255, 255, 0.04);
-  font-size: 10px;
-  font-weight: 800;
+  backdrop-filter: blur(12px);
+  font-family: var(--font-ui, "Fredoka", sans-serif);
+  font-size: 11.5px;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .player-page-root .watch-party-invite-actions button:hover {
-  border-color: rgba(255, 91, 138, 0.42);
-  background: rgba(255, 91, 138, 0.1);
+  border-color: rgba(255, 79, 134, 0.45);
+  background: linear-gradient(135deg, rgba(255, 79, 134, 0.16), rgba(255, 117, 159, 0.06));
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(255, 79, 134, 0.25);
+}
+.player-page-root .watch-party-invite-actions button:active {
+  transform: translateY(0.5px) scale(0.98);
 }
 .player-page-root .watch-party-invite-actions svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
+  color: #ff759f;
+  transition: transform 0.2s ease;
+}
+.player-page-root .watch-party-invite-actions button:hover svg {
+  transform: scale(1.12);
+  color: #ff9cb7;
 }
 
 .watch-party-qr-backdrop {
@@ -191,64 +248,172 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(8, 5, 8, 0.82);
-  backdrop-filter: blur(8px);
+  background: rgba(8, 5, 8, 0.85);
+  backdrop-filter: blur(10px);
 }
 .watch-party-qr-dialog {
   position: relative;
-  width: min(420px, 100%);
-  padding: 28px;
-  display: grid;
-  justify-items: center;
-  gap: 18px;
-  border: 1px solid rgba(255, 91, 138, 0.32);
+  width: min(390px, 100%);
+  padding: 26px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(255, 79, 134, 0.28);
   border-radius: 22px;
   color: #fff;
-  background: #1b1119;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  background: linear-gradient(180deg, #1d121b 0%, #130b12 100%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 79, 134, 0.12);
+  box-sizing: border-box;
 }
 .watch-party-qr-dialog > strong {
-  padding-right: 24px;
-  font-size: 16px;
+  padding-right: 28px;
+  font-family: var(--font-display, "Fredoka", sans-serif);
+  font-size: 18px;
+  font-weight: 700;
   text-align: center;
+  color: #ffffff;
+  margin-top: 2px;
 }
 .watch-party-qr-dialog > img {
-  width: min(320px, 76vw);
-  height: min(320px, 76vw);
-  padding: 10px;
-  border-radius: 16px;
-  background: #fff;
+  width: min(250px, 68vw);
+  height: min(250px, 68vw);
+  padding: 12px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  object-fit: contain;
 }
 .watch-party-qr-dialog > span {
   color: #ff82a7;
   font-family: monospace;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
+  text-shadow: 0 0 14px rgba(255, 130, 167, 0.4);
 }
 .watch-party-qr-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
-  border: 0;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  color: #d8c8d1;
+  background: rgba(255, 255, 255, 0.06);
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+.watch-party-qr-close:hover {
+  background: rgba(255, 79, 134, 0.2);
+  border-color: rgba(255, 79, 134, 0.4);
+  color: #ffffff;
+  transform: scale(1.05);
 }
 .watch-party-qr-close svg {
-  width: 17px;
+  width: 16px;
+  height: 16px;
+}
+
+/* QR Password Form */
+.watch-party-qr-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 79, 134, 0.18);
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+.watch-party-qr-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+}
+.watch-party-qr-label span {
+  font-family: var(--font-ui, "Fredoka", sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  color: #e5d7df;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.watch-party-qr-input {
+  width: 100%;
+  height: 42px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 0 14px;
+  color: #fff;
+  font-size: 13px;
+  font-family: var(--font-ui, "Fredoka", sans-serif);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  box-sizing: border-box;
+}
+.watch-party-qr-input:focus {
+  border-color: #ff4f86;
+  box-shadow: 0 0 14px rgba(255, 79, 134, 0.35);
+  background: rgba(15, 8, 14, 0.8);
+}
+.watch-party-qr-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+.watch-party-qr-hint {
+  display: block;
+  font-size: 11px;
+  color: #a99ca4;
+  line-height: 1.4;
+  text-align: center;
+}
+.watch-party-qr-submit {
+  width: 100%;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff4f86 0%, #ff759f 50%, #f43f5e 100%);
+  color: #ffffff;
+  font-family: var(--font-ui, "Fredoka", sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px -4px rgba(255, 79, 134, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.watch-party-qr-submit:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 24px -2px rgba(255, 79, 134, 0.7);
+  filter: brightness(1.06);
+}
+.watch-party-qr-submit:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.98);
+}
+.watch-party-qr-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .player-page-root .watch-party-tabs {
-  height: 54px;
+  height: 52px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   border-bottom: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.18);
 }
 .player-page-root .watch-party-tabs button {
   position: relative;
@@ -260,26 +425,37 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  font-size: 9px;
-  font-weight: 800;
+  gap: 4px;
+  font-family: var(--font-ui, "Fredoka", sans-serif);
+  font-size: 10.5px;
+  font-weight: 700;
+  transition: color 0.2s, transform 0.2s;
+}
+.player-page-root .watch-party-tabs button:hover {
+  color: #ffb3c7;
 }
 .player-page-root .watch-party-tabs button.active {
-  color: #fff;
+  color: #ffffff;
 }
 .player-page-root .watch-party-tabs button.active::after {
   content: "";
   position: absolute;
-  left: 22%;
-  right: 22%;
+  left: 18px;
+  right: 18px;
   bottom: 0;
-  height: 2px;
-  border-radius: 3px;
-  background: var(--pink);
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(90deg, #ff4f86, #ff759f);
+  box-shadow: 0 0 10px rgba(255, 79, 134, 0.65);
 }
 .player-page-root .watch-party-tabs svg {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s, color 0.2s;
+}
+.player-page-root .watch-party-tabs button.active svg {
+  color: #ff759f;
+  transform: scale(1.08);
 }
 .player-page-root .watch-party-rules {
   min-height: 0;
@@ -332,29 +508,30 @@
   margin-bottom: 4px;
 }
 .player-page-root .watch-party-messages header strong {
-  font-size: 9px;
+  font-size: 13px;
 }
 .player-page-root .watch-party-messages header b {
-  padding: 2px 4px;
+  padding: 2px 6px;
   border-radius: 4px;
   background: rgba(255, 91, 138, 0.16);
   color: #ff9ab7;
-  font-size: 7px;
+  font-size: 10px;
+  font-weight: 700;
 }
 .player-page-root .watch-party-messages time {
   margin-left: auto;
-  color: #766771;
-  font-size: 7px;
+  color: #a89aa3;
+  font-size: 11px;
 }
 .player-page-root .watch-party-messages p {
   display: inline-block;
   margin: 0;
-  padding: 8px 10px;
+  padding: 8px 12px;
   border-radius: 6px 13px 13px;
   background: #291b25;
   color: #eadde4;
-  font-size: 9px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.55;
   overflow-wrap: anywhere;
 }
 .player-page-root .watch-party-messages article.mine p {
@@ -380,6 +557,25 @@
 .player-page-root .watch-party-messages article.watch-party-message-admin p {
   border: 1px solid rgba(255, 209, 102, 0.18);
   background: rgba(255, 209, 102, 0.08);
+}
+.player-page-root .watch-party-messages article.watch-party-message-vip {
+  padding: 9px;
+  border: 1px solid rgba(124, 196, 255, 0.34);
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(75, 145, 255, 0.12), rgba(187, 107, 255, 0.1));
+}
+.player-page-root .watch-party-messages article.watch-party-message-vip .watch-party-avatar {
+  color: #07182b;
+  border-color: #7cc4ff;
+  background: linear-gradient(135deg, #7cc4ff, #c18aff);
+}
+.player-page-root .watch-party-messages article.watch-party-message-vip header b {
+  color: #07182b;
+  background: #7cc4ff;
+}
+.player-page-root .watch-party-messages article.watch-party-message-vip p {
+  border: 1px solid rgba(124, 196, 255, 0.2);
+  background: rgba(75, 145, 255, 0.09);
 }
 .player-page-root .watch-party-empty {
   padding: 26px 10px !important;
@@ -423,13 +619,23 @@
   border-radius: 11px;
   display: grid;
   place-items: center;
-  background: var(--pink);
+  background: linear-gradient(135deg, #ff4f86 0%, #ff759f 100%);
   color: #fff;
   cursor: pointer;
+  box-shadow: 0 2px 10px rgba(255, 79, 134, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.player-page-root .watch-party-composer button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(255, 79, 134, 0.5);
+}
+.player-page-root .watch-party-composer button:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.96);
 }
 .player-page-root .watch-party-composer button:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
 }
 .player-page-root .watch-party-composer svg {
   width: 16px;
@@ -455,16 +661,16 @@
   display: block;
 }
 .player-page-root .watch-party-member-list strong {
-  font-size: 10px;
+  font-size: 13px;
 }
 .player-page-root .watch-party-member-list small {
   margin-top: 2px;
-  color: #887985;
-  font-size: 8px;
+  color: #a395a0;
+  font-size: 11px;
 }
 .player-page-root .watch-party-member-list b {
   color: #ff91b0;
-  font-size: 8px;
+  font-size: 11px;
 }
 .player-page-root .watch-party-member-list article.watch-party-member-admin {
   margin: 4px 0;
@@ -492,38 +698,57 @@
   display: block;
 }
 .player-page-root .watch-party-settings span strong {
-  font-size: 10px;
+  font-size: 13px;
 }
 .player-page-root .watch-party-settings span small {
   margin-top: 3px;
-  color: #8f8089;
-  font-size: 8px;
+  color: #a395a0;
+  font-size: 11px;
 }
 .player-page-root .watch-party-settings button,
 .player-page-root .watch-party-room-error button {
-  min-height: 36px;
+  min-height: 38px;
   border: 1px solid var(--line);
-  border-radius: 11px;
-  padding: 0 11px;
+  border-radius: 12px;
+  padding: 0 14px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   background: rgba(255, 255, 255, 0.04);
   color: #fff;
-  font-size: 9px;
-  font-weight: 800;
+  font-family: var(--font-ui, "Fredoka", sans-serif);
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.player-page-root .watch-party-settings button:hover:not(:disabled),
+.player-page-root .watch-party-room-error button:hover:not(:disabled) {
+  background: rgba(255, 79, 134, 0.14);
+  border-color: rgba(255, 79, 134, 0.4);
+  color: #ff9cb7;
+  transform: translateY(-1px);
+}
+.player-page-root .watch-party-settings button:disabled,
+.player-page-root .watch-party-room-error button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .player-page-root .watch-party-settings button svg,
 .player-page-root .watch-party-room-error svg {
-  width: 14px;
+  width: 15px;
 }
 .player-page-root .watch-party-settings .watch-party-close {
   width: 100%;
   justify-content: center;
-  border-color: rgba(255, 104, 120, 0.25);
+  border-color: rgba(255, 104, 120, 0.3);
   color: #ff9aa5;
-  background: rgba(255, 104, 120, 0.07);
+  background: rgba(255, 104, 120, 0.08);
+}
+.player-page-root .watch-party-settings .watch-party-close:hover:not(:disabled) {
+  background: rgba(255, 79, 100, 0.2);
+  border-color: rgba(255, 79, 100, 0.5);
+  color: #fff;
 }
 .player-page-root .watch-party-room-error {
   margin: auto;
@@ -550,11 +775,11 @@
     font-size: 26px;
   }
   .player-page-root .watch-party-hero p {
-    font-size: 10px;
+    font-size: 16px;
   }
   .player-page-root .watch-party-hero > strong {
     padding: 8px 9px;
-    font-size: 9px;
+    font-size: 11px;
   }
   .player-page-root .watch-party-room-panel {
     min-height: 470px;

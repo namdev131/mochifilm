@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import Hls from "hls.js";
+import { useAppAuth } from "@/lib/auth-data-provider";
+import { MochiSettingsStore, useMochiSettings } from "@/lib/mochi-settings";
 import {
   Heart,
   Users,
@@ -216,6 +218,7 @@ interface PlayerControlsProps {
   onShowToast: (msg: string) => void;
   onTimeProgress?: (currSec: number, totalSec: number) => void;
   initialPosition?: number;
+  isPartyGuest?: boolean;
 }
 
 export const PlayerControls: React.FC<PlayerControlsProps> = ({
@@ -237,7 +240,10 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
   onShowToast,
   onTimeProgress,
   initialPosition,
+  isPartyGuest = false,
 }) => {
+  const { user, preferences, savePreference } = useAppAuth();
+  const settings = useMochiSettings();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playerRef = useRef<HTMLDivElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -268,13 +274,13 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
   } = usePlayerControlsVisibility(isPlaying && !isBusy);
 
   useEffect(() => {
-    const savedVolume = Number(localStorage.getItem("mochi-player-volume"));
-    const savedSpeed = Number(localStorage.getItem("mochi-player-speed"));
+    const savedVolume = user ? preferences.volume : Number(localStorage.getItem("mochi-player-volume"));
+    const savedSpeed = settings.playbackRate;
     if (Number.isFinite(savedVolume) && savedVolume >= 0 && savedVolume <= 1)
       setVolume(savedVolume);
     if (Number.isFinite(savedSpeed) && savedSpeed >= 0.5 && savedSpeed <= 2)
       setPlaybackSpeed(String(savedSpeed));
-  }, []);
+  }, [user?.id, preferences.volume, settings.playbackRate]);
 
   // Phân loại chính xác nguồn phát
   const { streamType, activePlayUrl, fallbackEmbedUrl, isEmbed, hasHls, hasEmbed } =
@@ -388,6 +394,12 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
             })),
           );
           setQualityLevel(hls!.currentLevel);
+          if (settings.quality !== "auto") {
+            const target = Number(settings.quality);
+            const level = hls!.levels.reduce((best, item, index) => Math.abs((item.height || 0) - target) < Math.abs((hls!.levels[best]?.height || 0) - target) ? index : best, 0);
+            hls!.currentLevel = level;
+            setQualityLevel(level);
+          }
           setSubtitleTrack(hls!.subtitleTrack);
           if (initialPosition && initialPosition > 5) {
             video.currentTime = initialPosition;
@@ -452,7 +464,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
         hlsRef.current = null;
       }
     };
-  }, [streamType, activePlayUrl, fallbackEmbedUrl, initialPosition, attemptAutoPlay]);
+  }, [streamType, activePlayUrl, fallbackEmbedUrl, initialPosition, attemptAutoPlay, settings.quality]);
 
   const formatTime = (secs: number) => {
     if (!isFinite(secs) || isNaN(secs)) return "00:00";
@@ -467,7 +479,14 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
     hasRestoredPositionRef.current = false;
   }, [movie.slug, activeEpisode?.name, activeStreamUrl]);
 
+  const rejectPartyGuestControl = () => {
+    if (!isPartyGuest) return false;
+    onShowToast("Chủ phòng đang điều khiển phát phim");
+    return true;
+  };
+
   const togglePlay = () => {
+    if (rejectPartyGuestControl()) return;
     if (streamType === "none" || !activePlayUrl) {
       onShowToast("Tập phim chưa có nguồn phát");
       return;
@@ -540,6 +559,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
   };
 
   const seekFromClientX = (clientX: number, element: HTMLDivElement) => {
+    if (rejectPartyGuestControl()) return;
     const video = videoRef.current;
     if (!video || !duration) return;
     const rect = element.getBoundingClientRect();
@@ -553,6 +573,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
   const handleProgressKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
     e.preventDefault();
+    if (rejectPartyGuestControl()) return;
     const video = videoRef.current;
     if (!video || !duration) return;
     const targetTime =
@@ -576,6 +597,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
     }
     setIsMuted(val === 0);
     localStorage.setItem("mochi-player-volume", String(val));
+    if (user) void savePreference({ volume: val });
   };
 
   const toggleMute = () => {
@@ -591,6 +613,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
   };
 
   const skipBy = (seconds: number) => {
+    if (rejectPartyGuestControl()) return;
     const video = videoRef.current;
     if (!video || !duration) return;
     video.currentTime = Math.max(0, Math.min(duration, video.currentTime + seconds));
@@ -607,6 +630,8 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
       videoRef.current.playbackRate = spd;
     }
     localStorage.setItem("mochi-player-speed", value);
+    MochiSettingsStore.set({ playbackRate: spd as typeof settings.playbackRate });
+    if (user) void savePreference({ speed: spd });
     onShowToast(`Tốc độ ${value}x`);
   };
 
@@ -794,6 +819,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
         toggleSubtitles();
       } else if (e.key === "ArrowRight" || key === "l") {
         e.preventDefault();
+        if (rejectPartyGuestControl()) return;
         if (videoRef.current && activePlayUrl && streamType !== "none") {
           videoRef.current.currentTime = Math.min(
             videoRef.current.duration || Infinity,
@@ -802,6 +828,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
         }
       } else if (e.key === "ArrowLeft" || key === "j") {
         e.preventDefault();
+        if (rejectPartyGuestControl()) return;
         if (videoRef.current && activePlayUrl && streamType !== "none") {
           videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
         }
@@ -835,6 +862,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
         setSpeed(String(nextSpeed));
       } else if (/^[0-9]$/.test(e.key) && duration > 0) {
         e.preventDefault();
+        if (rejectPartyGuestControl()) return;
         const fraction = Number(e.key) / 10;
         const targetTime = fraction * duration;
         if (videoRef.current) {
@@ -917,7 +945,11 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
             onLoadedMetadata={handleLoadedMetadata}
             onEnded={() => {
               setIsPlaying(false);
-              onShowToast("Phim đã phát hết");
+              const nextEpisode = servers?.[activeServerIndex]?.items?.[activeEpisodeIndex + 1];
+              if (settings.autoplayNext && nextEpisode) {
+                onSelectEpisode(activeServerIndex, activeEpisodeIndex + 1);
+                onShowToast(`Đang phát ${nextEpisode.name}`);
+              } else onShowToast("Phim đã phát hết");
               if (videoRef.current) {
                 const dur = videoRef.current.duration || 0;
                 onTimeProgress?.(dur, dur);

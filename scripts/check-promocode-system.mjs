@@ -1,0 +1,33 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const api = read("src/routes/api/promocode.ts");
+const adminApi = read("src/routes/api/admin.ts");
+const admin = read("src/routes/admin.tsx");
+const panel = read("src/components/admin/AdminTabPanels.tsx");
+const account = read("src/routes/account.tsx");
+const modal = read("src/components/home/VipNoticeModal.tsx");
+const migration = read("supabase/migrations/20260909000004_vip_promocodes.sql");
+
+assert.match(migration, /create table if not exists public\.vip_promocodes/i);
+assert.match(migration, /code_hash text unique not null/i);
+assert.match(migration, /vip_expires_at timestamptz not null/i);
+assert.match(migration, /redeemed_by uuid/i);
+assert.match(adminApi, /action === "createVipPromocode"/);
+assert.match(adminApi, /vip_expires_at.*>now\(\)/s);
+assert.match(adminApi, /crypto\.subtle\.digest/);
+assert.match(api, /authorization/i);
+assert.match(api, /for update/i);
+assert.match(api, /redeemed_by is null/i);
+assert.match(api, /raw_app_meta_data/);
+assert.match(api, /admin.*deputy_admin/s);
+assert.match(api, /user\.vip\.promocode\.redeem/);
+assert.match(admin, /createVipPromocode/);
+assert.match(panel, /Tạo promocode VIP/);
+assert.match(account, /Nhập promocode/);
+assert.match(account, /\/api\/promocode/);
+assert.match(modal, /Nhập promocode/);
+assert.match(modal, /\/api\/promocode/);
+assert.match(modal, /refreshSession/);
+console.log("Promocode contract passed: admin create, hashed one-use code, fixed VIP expiry, authenticated redemption");

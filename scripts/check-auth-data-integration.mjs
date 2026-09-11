@@ -22,6 +22,8 @@ assert(
 );
 assert(pkg.dependencies.convex, "Convex dependency missing");
 assert.match(provider, /ConvexProviderWithAuth/, "Convex is not using Supabase auth");
+assert.match(provider, /import \{ supabase \} from ["']\.\/supabase["']/, "Auth must reuse the shared Supabase client");
+assert.doesNotMatch(provider, /createClient\(/, "Auth must not create a second Supabase client");
 assert.match(provider, /onAuthStateChange/, "Supabase session changes are not observed");
 assert.match(auth, /signInWithPassword/, "Supabase password login missing");
 assert.match(auth, /signUp/, "Supabase registration missing");

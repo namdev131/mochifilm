@@ -628,8 +628,8 @@
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.05);
   color: #ded3d9;
-  font-size: 9px;
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .details-root .tag.rate {
@@ -640,7 +640,7 @@
   margin: 0;
   max-width: 635px;
   color: #d8cbd2;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.65;
 }
 
@@ -1152,7 +1152,7 @@
   }
 }
 
-@media (max-width: 1050px) {
+@media (max-width: 1023px) {
   .details-root {
     --sidebar: 0 !important;
   }
@@ -1208,8 +1208,8 @@
     font-size: 31px;
   }
   .details-root .hero-copy p {
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 14px;
+    line-height: 1.6;
   }
   .details-root .hero-mascot,
   .details-root .mascot-balloon {
@@ -1260,9 +1260,10 @@
     align-items: center;
     justify-content: center;
     gap: 2px;
-    font-size: 10px;
+    font-family: var(--font-ui);
+    font-size: 11px;
     color: #968991;
-    font-weight: 800;
+    font-weight: 700;
     cursor: pointer;
     text-decoration: none;
   }
@@ -1276,11 +1277,33 @@
 }
 
 @media (max-width: 520px) {
+  .details-root .topbar {
+    gap: 8px;
+  }
+  .details-root .top-space,
+  .details-root .user-mini {
+    display: none;
+  }
+  .details-root .hero {
+    min-height: 0;
+  }
   .details-root .hero-inner {
-    grid-template-columns: 95px 1fr;
+    grid-template-columns: 1fr;
+    padding: 170px 14px 18px;
+  }
+  .details-root .poster {
+    display: none;
+  }
+  .details-root .hero-copy {
+    min-width: 0;
+    max-width: 100%;
   }
   .details-root .hero-copy h1 {
-    font-size: 27px;
+    font-size: 25px;
+    overflow-wrap: anywhere;
+  }
+  .details-root .actions {
+    flex-wrap: wrap;
   }
   .details-root .meta {
     gap: 5px;

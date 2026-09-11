@@ -15,20 +15,28 @@ import {
   type AdminDatabaseStats,
   type AdminParty,
   type AdminUser,
+  type AdminVipPrice,
   type PermRow,
   type Permission,
 } from "./admin-constants";
 import type { AdminTab } from "./AdminLayoutView";
+import { VIP_PLAN_BY_ID, VIP_PLANS, type VipPlanId } from "@/lib/vip-plans";
 
 interface Props {
   activeTab: AdminTab;
   onSelectTab: (tab: AdminTab) => void;
   users: AdminUser[];
+  vipPrices: AdminVipPrice[];
   filteredUsers: AdminUser[];
   searchQuery: string;
   onSearchChange: (value: string) => void;
   onOpenCreateUser: () => void;
   onToggleDeputy: (user: AdminUser) => void;
+  onSetVipPlan: (user: AdminUser, plan: VipPlanId | null) => void;
+  onSetVipPrices: (prices: Array<{ plan_id: VipPlanId; price: number }>) => void;
+  onCreateVipPromocode: (vipExpiresAt: string) => void;
+  createdPromocode: string;
+  onBroadcastNotification: (title: string, message: string) => void;
   onOpenDeleteConfirm: (user: { id: string; email: string }) => void;
   permMatrix: PermRow[];
   onTogglePermission: (userId: string, permission: Permission, enabled: boolean) => void;
@@ -44,6 +52,7 @@ interface Props {
   hasPermission: (permission: Permission) => boolean;
   onOpenWarnDialog: (data: { partyId: string; partyName: string; message: string }) => void;
   onCloseParty: (party: AdminParty) => void;
+  onDeleteParty: (party: AdminParty) => void;
   onTogglePartyLock: (party: AdminParty) => void;
   sourcePings: Record<string, number>;
   databaseStats?: AdminDatabaseStats;
@@ -133,6 +142,21 @@ export function AdminTabPanels(props: Props) {
               </button>
             ))}
           </div>
+          {props.isAdmin && (
+            <form
+              className="rounded-2xl border border-white/10 bg-[#140d17] p-4 grid gap-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const form = new FormData(event.currentTarget);
+                props.onBroadcastNotification(String(form.get("title")), String(form.get("message")));
+              }}
+            >
+              <Header title="Gửi thông báo toàn server" text="Xuất hiện trong chuông của mọi tài khoản." />
+              <input name="title" required maxLength={100} placeholder="Tiêu đề" className="min-h-11 rounded-xl border border-white/10 bg-white/[.03] px-3 text-xs" />
+              <textarea name="message" required maxLength={500} placeholder="Nội dung" className="min-h-24 rounded-xl border border-white/10 bg-white/[.03] p-3 text-xs" />
+              <button type="submit" className="min-h-11 rounded-xl bg-[#d85678] px-4 text-xs font-bold">Gửi thông báo</button>
+            </form>
+          )}
         </section>
       )}
 
@@ -153,6 +177,57 @@ export function AdminTabPanels(props: Props) {
               Thêm người dùng
             </button>
           </div>
+          {props.isAdmin && (
+            <div className="grid gap-3 lg:grid-cols-2">
+            <form
+              key={props.vipPrices.map(({ plan_id, price }) => `${plan_id}:${price}`).join("|")}
+              className="grid gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/[.04] p-4 sm:grid-cols-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const data = new FormData(event.currentTarget);
+                props.onSetVipPrices(
+                  VIP_PLANS.map((plan) => ({ plan_id: plan.id, price: Number(data.get(plan.id)) })),
+                );
+              }}
+            >
+              {VIP_PLANS.map((plan) => (
+                <label key={plan.id} className="grid gap-1 text-xs text-[#b8a8b2]">
+                  {plan.name}
+                  <input
+                    name={plan.id}
+                    type="number"
+                    min="1000"
+                    max="10000000"
+                    step="1000"
+                    required
+                    defaultValue={
+                      props.vipPrices.find((price) => price.plan_id === plan.id)?.price ?? plan.price
+                    }
+                    className="min-h-10 rounded-lg border border-white/10 bg-[#140d17] px-3 text-white"
+                  />
+                </label>
+              ))}
+              <button type="submit" className="min-h-10 self-end rounded-lg bg-amber-500 px-3 text-xs font-bold text-black">
+                Lưu giá VIP
+              </button>
+            </form>
+            <form
+              className="grid gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/[.04] p-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                props.onCreateVipPromocode(String(new FormData(event.currentTarget).get("vip_expires_at")));
+              }}
+            >
+              <Header title="Tạo promocode VIP" text="Mã dùng một lần; VIP hết hạn đúng ngày đã chọn." />
+              <label className="grid gap-1 text-xs text-[#b8a8b2]">
+                Ngày VIP hết hạn
+                <input name="vip_expires_at" type="datetime-local" required className="min-h-10 rounded-lg border border-white/10 bg-[#140d17] px-3 text-white" />
+              </label>
+              <button type="submit" className="min-h-10 rounded-lg bg-amber-500 px-3 text-xs font-bold text-black">Tạo promocode</button>
+              {props.createdPromocode && <output className="rounded-lg bg-black/30 p-3 font-mono text-sm text-amber-200" aria-live="polite">{props.createdPromocode}</output>}
+            </form>
+            </div>
+          )}
           <input
             type="search"
             value={props.searchQuery}
@@ -184,6 +259,8 @@ export function AdminTabPanels(props: Props) {
                         ? "Main Admin"
                         : user.role === "deputy_admin"
                           ? "Phó Admin"
+                          : user.role === "vip"
+                            ? `VIP ${user.vip_plan ? VIP_PLAN_BY_ID[user.vip_plan].name : ""} đến ${new Date(user.vip_expires_at!).toLocaleDateString("vi-VN")}`
                           : "Thành viên"}
                     </td>
                     <td>{new Date(user.created_at).toLocaleDateString("vi-VN")}</td>
@@ -199,6 +276,14 @@ export function AdminTabPanels(props: Props) {
                           >
                             {user.role === "deputy_admin" ? "Hạ quyền" : "Bổ nhiệm Phó"}
                           </button>
+                          {user.role !== "deputy_admin" && (user.role === "vip" ? (
+                            <button type="button" onClick={() => props.onSetVipPlan(user, null)} className="min-h-10 rounded-lg bg-amber-500/10 px-3 text-amber-200">Thu hồi VIP</button>
+                          ) : (
+                            <select aria-label={`Chọn gói VIP cho ${user.email}`} defaultValue="" onChange={(event) => { if (event.target.value) props.onSetVipPlan(user, event.target.value as VipPlanId); event.currentTarget.value = ""; }} className="min-h-10 rounded-lg border border-amber-500/20 bg-[#1b1417] px-3 text-amber-200">
+                              <option value="">Cấp VIP…</option>
+                              {VIP_PLANS.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}
+                            </select>
+                          ))}
                           <button
                             type="button"
                             onClick={() =>
@@ -412,6 +497,15 @@ export function AdminTabPanels(props: Props) {
                     >
                       Đóng phòng
                     </button>
+                    {props.isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => props.onDeleteParty(party)}
+                        className="min-h-10 rounded-lg border border-red-400/40 px-3 font-bold text-red-300 hover:bg-red-500/15 focus-visible:ring-2 focus-visible:ring-red-400"
+                      >
+                        <Trash2 className="mr-1 inline w-4" /> Xóa phòng
+                      </button>
+                    )}
                   </div>
                 </Card>
               ))}

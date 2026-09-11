@@ -1,4 +1,4 @@
-const CACHE = "mochi-film-offline-v1";
+const CACHE = "mochi-film-offline-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -8,7 +8,7 @@ self.addEventListener("install", (event) => {
         cache.addAll([
           "/offline.html",
           "/assets/mochi/wordmark.webp",
-          "/assets/mochi/mascot-mini.png",
+          "/assets/mochi/loading-atlas.png",
         ]),
       ),
   );
@@ -29,5 +29,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(fetch(event.request).catch(() => caches.match("/offline.html")));
+    return;
+  }
+
+  if (event.request.method === "GET") {
+    event.respondWith(caches.match(event.request).then((cached) => cached ?? fetch(event.request)));
   }
 });

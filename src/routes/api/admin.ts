@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { VIP_PLAN_BY_ID, type VipPlanId } from "@/lib/vip-plans";
 import { Pool, type PoolClient } from "pg";
 
 const ADMIN_EMAILS = new Set(["lacviet55@proton.me", "admin@mochifilm.vn"]);
@@ -63,12 +64,20 @@ function can(actor: Actor, permission: Permission) {
   return actor.isMainAdmin || actor.permissions.has(permission);
 }
 
+async function hashPromocode(code: string) {
+  return Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code))).toString("hex");
+}
+
 async function listUsers() {
   const { rows } = await db().query(
     `select u.id, u.email, u.raw_user_meta_data->>'display_name' as display_name,
             case when lower(u.email)=any($1) or u.raw_app_meta_data->>'role'='admin' then 'admin'
                  when u.raw_app_meta_data->>'role'='deputy_admin' then 'deputy_admin'
+                 when u.raw_app_meta_data->>'role'='vip'
+                      and (u.raw_app_meta_data->>'vip_expires_at')::timestamptz>now() then 'vip'
                  else 'member' end as role,
+            u.raw_app_meta_data->>'vip_expires_at' as vip_expires_at,
+            u.raw_app_meta_data->>'vip_plan' as vip_plan,
             u.created_at, u.last_sign_in_at, u.banned_until,
             coalesce(array_remove(array_agg(sp.permission),null),'{}') as permissions
      from auth.users u left join public.staff_permissions sp on sp.user_id=u.id
@@ -108,6 +117,21 @@ async function listAuditLog() {
       .query(`select a.id::text,u.email actor_email,a.action,a.target_type,a.target_id,a.details,a.created_at
       from public.admin_audit_log a left join auth.users u on u.id=a.actor_id
       order by a.created_at desc limit 30`)
+  ).rows;
+}
+
+async function listVipPrices() {
+  const exists = await db().query("select to_regclass('public.vip_plan_prices') as name");
+  if (!exists.rows[0]?.name)
+    return Object.values(VIP_PLAN_BY_ID).map((plan) => ({
+      plan_id: plan.id,
+      original_price: plan.price,
+      price: plan.price,
+    }));
+  return (
+    await db().query(
+      "select plan_id,original_price,price from public.vip_plan_prices order by original_price",
+    )
   ).rows;
 }
 
@@ -212,6 +236,7 @@ async function handler(request: Request) {
         auditLog: actor.isMainAdmin ? await listAuditLog() : [],
         permissions: actor.isMainAdmin ? PERMISSIONS : [...actor.permissions],
         isMainAdmin: actor.isMainAdmin,
+        vipPrices: await listVipPrices(),
       });
     }
 
@@ -251,6 +276,22 @@ async function handler(request: Request) {
         );
         if (!target.rowCount) return json({ error: "Không tìm thấy bình luận" }, 404);
         await audit(client, actor, "comment.delete", "comment", id);
+        return json({ ok: true });
+      });
+    }
+    if (action === "deleteParty") {
+      if (!actor.isMainAdmin) return json({ error: "Chỉ Admin chính được xóa phòng" }, 403);
+      const id = String(body.id ?? "").trim();
+      if (!id) return json({ error: "Thiếu phòng" }, 400);
+      return transaction(async (client) => {
+        const target = await client.query<{ code: string }>(
+          "delete from public.watch_parties where id=$1 returning code",
+          [id],
+        );
+        if (!target.rowCount) return json({ error: "Không tìm thấy phòng" }, 404);
+        await audit(client, actor, "watch_party.delete", "watch_party", id, {
+          code: target.rows[0].code,
+        });
         return json({ ok: true });
       });
     }
@@ -333,6 +374,110 @@ async function handler(request: Request) {
           await client.query("delete from public.staff_permissions where user_id=$1", [id]);
         await audit(client, actor, enabled ? "user.promote" : "user.demote", "user", id);
         return json({ ok: true });
+      });
+    }
+    if (action === "setVip") {
+      const id = String(body.id ?? "").trim();
+      const enabled = body.enabled === true;
+      const planId = String(body.plan ?? "") as VipPlanId;
+      const plan = VIP_PLAN_BY_ID[planId];
+      if (!id) return json({ error: "Thiếu tài khoản" }, 400);
+      if (enabled && !plan) return json({ error: "Gói VIP không hợp lệ" }, 400);
+      return transaction(async (client) => {
+        const target = await client.query<{ email: string; role: string | null }>(
+          "select lower(email) email,raw_app_meta_data->>'role' role from auth.users where id=$1 for update",
+          [id],
+        );
+        if (!target.rowCount) return json({ error: "Không tìm thấy tài khoản" }, 404);
+        if (ADMIN_EMAILS.has(target.rows[0].email) || ["admin", "deputy_admin"].includes(target.rows[0].role ?? ""))
+          return json({ error: "Không thể đổi VIP cho tài khoản quản trị" }, 403);
+        if (enabled) {
+          await client.query(
+            `update auth.users set raw_app_meta_data=coalesce(raw_app_meta_data,'{}')
+             ||jsonb_build_object('role','vip','vip_plan',$2::text,'vip_expires_at',
+               (greatest(now(),coalesce(nullif(raw_app_meta_data->>'vip_expires_at','')::timestamptz,now()))+make_interval(days => $3::int))::text)
+             where id=$1`,
+            [id, plan.id, plan.days],
+          );
+        } else {
+          await client.query(
+            "update auth.users set raw_app_meta_data=coalesce(raw_app_meta_data,'{}')-'role'-'vip_plan'-'vip_expires_at' where id=$1",
+            [id],
+          );
+        }
+        await audit(client, actor, enabled ? "user.vip.grant" : "user.vip.revoke", "user", id, {
+          days: enabled ? plan.days : 0,
+          plan: enabled ? plan.id : null,
+        });
+        return json({ ok: true });
+      });
+    }
+    if (action === "createVipPromocode") {
+      const expiry = new Date(String(body.vip_expires_at ?? ""));
+      if (!Number.isFinite(expiry.getTime()) || expiry.getTime() <= Date.now())
+        return json({ error: "Ngày hết hạn VIP phải ở tương lai" }, 400);
+      const code = `MOCHI-${crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;
+      return transaction(async (client) => {
+        const promo = await client.query<{ id: string }>(
+          "insert into public.vip_promocodes(code_hash,vip_expires_at,created_by) values($1,$2,$3) returning id",
+          [await hashPromocode(code), expiry.toISOString(), actor.id],
+        );
+        await audit(client, actor, "vip.promocode.create", "promocode", promo.rows[0].id, { vip_expires_at: expiry.toISOString() });
+        return json({ ok: true, code, vip_expires_at: expiry.toISOString() });
+      });
+    }
+    if (action === "setVipPrices") {
+      const prices = Array.isArray(body.prices) ? body.prices : [];
+      if (prices.length !== 3) return json({ error: "Cần đủ 3 gói VIP" }, 400);
+      const normalized = prices.map((item) => {
+        const row = item as Record<string, unknown>;
+        return { plan: VIP_PLAN_BY_ID[String(row.plan_id) as VipPlanId], price: Number(row.price) };
+      });
+      if (
+        normalized.some(
+          ({ plan, price }) =>
+            !plan || !Number.isInteger(price) || price < 1000 || price > 10000000,
+        )
+      )
+        return json({ error: "Giá VIP phải là số nguyên từ 1.000đ đến 10.000.000đ" }, 400);
+      return transaction(async (client) => {
+        for (const { plan, price } of normalized) {
+          await client.query(
+            `insert into public.vip_plan_prices(plan_id,original_price,price,updated_at,updated_by)
+             values($1,$2,$3,now(),$4) on conflict(plan_id) do update
+             set price=excluded.price,updated_at=now(),updated_by=excluded.updated_by`,
+            [plan.id, plan.price, price, actor.id],
+          );
+        }
+        await audit(client, actor, "vip.price.update", "vip", "plans", {
+          prices: normalized.map(({ plan, price }) => ({ plan: plan.id, price })),
+        });
+        return json({ ok: true });
+      });
+    }
+    if (action === "broadcastNotification") {
+      const title = String(body.title ?? "").trim();
+      const message = String(body.message ?? "").trim();
+      if (!title || title.length > 100 || !message || message.length > 500)
+        return json({ error: "Tiêu đề 1-100 ký tự; nội dung 1-500 ký tự" }, 400);
+      return transaction(async (client) => {
+        const recent = await client.query(
+          "select 1 from public.admin_audit_log where actor_id=$1 and action='user.notification.broadcast' and created_at>now()-interval '30 seconds' limit 1",
+          [actor.id],
+        );
+        if (recent.rowCount) return json({ error: "Chờ 30 giây trước khi gửi tiếp" }, 429);
+        const broadcastId = crypto.randomUUID();
+        const result = await client.query(
+          `insert into public.notifications(user_id,title,body,kind,broadcast_id)
+           select id,$1,$2,'admin',$3 from auth.users
+           on conflict(user_id,broadcast_id) where broadcast_id is not null do nothing`,
+          [title, message, broadcastId],
+        );
+        await audit(client, actor, "user.notification.broadcast", "broadcast", broadcastId, {
+          title,
+          recipients: result.rowCount,
+        });
+        return json({ ok: true, recipients: result.rowCount });
       });
     }
     if (action === "setPermission") {

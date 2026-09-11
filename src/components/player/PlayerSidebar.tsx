@@ -105,7 +105,7 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
           : currentSource;
 
   return (
-    <aside className="sidebar fixed top-0 bottom-0 left-0 z-50 w-[268px] min-w-[268px] max-w-[268px] flex flex-col justify-between bg-[#0e0e14]/95 backdrop-blur-2xl border-r border-white/[0.06] transition-transform duration-300 ease-in-out">
+    <aside className="desktop-navigation sidebar fixed top-0 bottom-0 left-0 z-50 w-[268px] min-w-[268px] max-w-[268px] flex flex-col justify-between bg-[#0e0e14]/95 backdrop-blur-2xl border-r border-white/[0.06] transition-transform duration-300 ease-in-out">
       {/* 1. Logo Wordmark */}
       <div className="wordmark flex items-center justify-between px-3 sm:px-5 py-3.5 border-b border-white/[0.04]">
         <Link
@@ -149,7 +149,7 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
               className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group relative cursor-pointer text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
             >
               <Flame className="w-4 h-4 transition duration-200 text-zinc-400 group-hover:text-pink-400" />
-              <span>Phim mới</span>
+              <span title="Phim mới">Mới</span>
             </Link>
 
             {/* 3. Phim lẻ */}
@@ -378,7 +378,7 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
             >
               <div className="flex items-center gap-3">
                 <Clock className="w-4 h-4 text-zinc-400 group-hover:text-pink-400" />
-                <span>Lịch sử xem</span>
+                <span title="Lịch sử xem">Lịch sử</span>
               </div>
               {historyCount > 0 && (
                 <span className="text-[11px] text-zinc-400">{historyCount} phim</span>
@@ -401,7 +401,7 @@ export const PlayerSidebar: React.FC<PlayerSidebarProps> = ({
             >
               <div className="flex items-center gap-3">
                 <Server className="w-4 h-4 text-zinc-400 group-hover:text-pink-400" />
-                <span>Nguồn phim</span>
+                <span title="Nguồn phim">Nguồn</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />

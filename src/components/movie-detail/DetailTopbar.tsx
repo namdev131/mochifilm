@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Settings } from "lucide-react";
 import { searchMoviesMerged } from "@/lib/api";
 import type { MovieCard } from "@/lib/types";
+import { NotificationBell } from "@/components/common/NotificationBell";
 
 interface DetailTopbarProps {
   onShowToast?: (msg: string) => void;
@@ -266,18 +268,8 @@ export const DetailTopbar: React.FC<DetailTopbarProps> = ({ onShowToast }) => {
 
       <div className="top-space" />
 
-      <button
-        type="button"
-        className="icon-btn"
-        onClick={handleNotificationClick}
-        aria-label="Thông báo"
-      >
-        <svg width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
-          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-          <path d="M10 21h4" />
-        </svg>
-        {unreadCount > 0 && <b>{unreadCount}</b>}
-      </button>
+      <NotificationBell />
+      <Link to="/settings" className="icon-btn" aria-label="Cài đặt"><Settings size={18} /></Link>
 
       <div
         className="user-mini cursor-pointer"

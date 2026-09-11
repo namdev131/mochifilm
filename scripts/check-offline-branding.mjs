@@ -12,4 +12,5 @@ assert.match(root, /serviceWorker\.register\("\/sw\.js"\)/);
 assert.match(offline, /Mochi Film/);
 assert.doesNotMatch(`${offline}\n${watchParty}`, /Lạc Việt/i);
 assert.match(worker, /caches\.match\("\/offline\.html"\)/);
+assert.match(worker, /caches\.match\(event\.request\)/);
 console.log("Offline branding contract: OK");

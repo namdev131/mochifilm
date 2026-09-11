@@ -10,6 +10,7 @@ import { MoviePreviewModal } from "@/components/home/MoviePreviewModal";
 import { FavoritesTab } from "@/components/home/FavoritesTab";
 import { HistoryTab } from "@/components/home/HistoryTab";
 import { WatchPartyLobby } from "@/components/home/WatchPartyLobby";
+import { MobileBottomDock } from "@/components/common/MobileBottomDock";
 import {
   Play,
   Plus,
@@ -55,12 +56,12 @@ import {
   RefreshCw,
   LogIn,
   LogOut,
-  Sun,
-  Moon,
+
   ArrowUp,
   ArrowDown,
   Minus,
   Users,
+  Settings,
 } from "lucide-react";
 import type { MovieCard, MovieDetail, SourceId, SourceFilter, EpisodeServer } from "../lib/types";
 import {
@@ -369,7 +370,11 @@ export function HomePage() {
   const { user, signOut } = useAppAuth();
   const syncUser = useMutation(api.users.syncCurrent);
   const convexHistory = useConvexQuery(api.watchHistory.list, user ? {} : "skip");
+  const convexFavorites = useConvexQuery(api.favorites.list, user ? {} : "skip");
   const convexNotifications = useConvexQuery(api.notifications.list, user ? {} : "skip");
+  const setFavorite = useMutation(api.favorites.set);
+  const removeCloudFavorite = useMutation(api.favorites.remove);
+  const clearCloudFavorites = useMutation(api.favorites.clear);
   const removeHistory = useMutation(api.watchHistory.remove);
   const clearHistory = useMutation(api.watchHistory.clear);
   const markRead = useMutation(api.notifications.markRead);
@@ -391,29 +396,6 @@ export function HomePage() {
   const mainContentRef = useRef<HTMLElement>(null);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
 
-  // Light / Dark Theme State (luôn hỗ trợ chuyển đổi mobile & desktop)
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-
-  useEffect(() => {
-    try {
-      const savedTheme = (localStorage.getItem("mochi_theme") as "dark" | "light") || "dark";
-      setTheme(savedTheme);
-      document.documentElement.className = savedTheme;
-    } catch {
-      // fallback
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    try {
-      localStorage.setItem("mochi_theme", nextTheme);
-      document.documentElement.className = nextTheme;
-    } catch {
-      // fallback
-    }
-  };
 
   const currentUser = user
     ? {
@@ -621,20 +603,22 @@ export function HomePage() {
   const reloadRealUserData = async () => {
     if (typeof window === "undefined") return;
 
-    // 1. Load Real Favorites (Strictly real stored data)
-    try {
-      const rawFav =
-        localStorage.getItem("mochi_favorites") || localStorage.getItem("lv-favorites");
-      if (rawFav) {
-        const parsed = JSON.parse(rawFav);
-        if (Array.isArray(parsed)) {
-          setFavorites(parsed.filter((f) => f && f.slug));
-        }
-      } else {
+    // 1. Load real account favorites; guests keep browser-local data.
+    if (user && convexFavorites) {
+      setFavorites(convexFavorites.map((favorite) => ({
+        slug: favorite.slug,
+        name: favorite.name,
+        poster: favorite.poster || "",
+        thumb: favorite.poster || "",
+        source: favorite.source as SourceId,
+      })));
+    } else {
+      try {
+        const parsed = JSON.parse(localStorage.getItem("mochi_favorites") || localStorage.getItem("lv-favorites") || "[]");
+        setFavorites(Array.isArray(parsed) ? parsed.filter((favorite) => favorite?.slug) : []);
+      } catch {
         setFavorites([]);
       }
-    } catch {
-      setFavorites([]);
     }
 
     // 2. Load Real Watch History from session or localStorage
@@ -729,7 +713,7 @@ export function HomePage() {
       window.removeEventListener("lv-favorites-sync", handleSync);
       window.removeEventListener("storage", handleSync);
     };
-  }, [convexHistory]);
+  }, [convexHistory, convexFavorites, user]);
 
   // Keyboard Escape listener for confirmDialog
   useEffect(() => {
@@ -1094,28 +1078,26 @@ export function HomePage() {
 
   // Remove single movie from favorites
   const removeFavorite = (slug: string) => {
-    setFavorites((prev) => {
-      const next = prev.filter((f) => f.slug !== slug);
-      try {
+    if (user) void removeCloudFavorite({ slug });
+    else {
+      setFavorites((prev) => {
+        const next = prev.filter((favorite) => favorite.slug !== slug);
         localStorage.setItem("mochi_favorites", JSON.stringify(next));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-    window.dispatchEvent(new CustomEvent("lv-favorites-sync"));
+        return next;
+      });
+      window.dispatchEvent(new CustomEvent("lv-favorites-sync"));
+    }
   };
 
   // Clear all favorites
   const clearAllFavorites = () => {
-    setFavorites([]);
-    try {
+    if (user) void clearCloudFavorites({});
+    else {
+      setFavorites([]);
       localStorage.removeItem("mochi_favorites");
       localStorage.removeItem("lv-favorites");
-    } catch {
-      // ignore
+      window.dispatchEvent(new CustomEvent("lv-favorites-sync"));
     }
-    window.dispatchEvent(new CustomEvent("lv-favorites-sync"));
   };
 
   // Confirm delete single favorite
@@ -1145,6 +1127,10 @@ export function HomePage() {
     const exists = favorites.some((f) => f.slug === movie.slug);
     if (exists) {
       confirmDeleteFavorite(movie);
+      return;
+    }
+    if (user) {
+      void setFavorite({ slug: movie.slug, name: movie.name, poster: movie.poster, source: movie.source });
       return;
     }
     const next: FavoriteMovie[] = [
@@ -1928,12 +1914,12 @@ export function HomePage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen w-full max-w-full overflow-x-hidden bg-[#09090d] text-zinc-100 font-sans antialiased selection:bg-pink-500 selection:text-white">
+    <div className="desktop-home-shell flex min-h-screen w-full max-w-full overflow-x-hidden bg-[#09090d] text-zinc-100 font-sans antialiased selection:bg-pink-500 selection:text-white">
       {/* ------------------------------------------------------------- */}
       {/* SIDEBAR TRÁI 268px                                            */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-[268px] min-w-[268px] max-w-[268px] flex flex-col justify-between bg-[#0e0e14]/95 backdrop-blur-2xl border-r border-white/[0.06] transition-transform duration-300 ease-in-out ${
+        className={`desktop-navigation fixed top-0 bottom-0 left-0 z-50 w-[268px] min-w-[268px] max-w-[268px] flex flex-col justify-between bg-[#0e0e14]/95 backdrop-blur-2xl border-r border-white/[0.06] transition-transform duration-300 ease-in-out ${
           isSidebarOpenMobile ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -1959,7 +1945,7 @@ export function HomePage() {
               <img
                 src="/assets/mochi/wordmark.webp"
                 alt="Mochi Film"
-                className="w-[72px] h-[58px] lg:w-[205px] lg:h-[78px] max-w-full object-contain drop-shadow-[0_8px_16px_rgba(255,79,131,0.16)] group-hover:drop-shadow-[0_10px_20px_rgba(255,79,131,0.24)] group-hover:scale-[1.015] transition-all duration-200"
+                className="w-[160px] h-[64px] lg:w-[205px] lg:h-[78px] max-w-full object-contain drop-shadow-[0_8px_16px_rgba(255,79,131,0.16)] group-hover:drop-shadow-[0_10px_20px_rgba(255,79,131,0.24)] group-hover:scale-[1.015] transition-all duration-200"
               />
             </div>
           </div>
@@ -2016,7 +2002,7 @@ export function HomePage() {
                 <Users
                   className={`w-4 h-4 ${selectedNav === "watch-party" ? "text-pink-400" : "text-zinc-400 group-hover:text-pink-400"}`}
                 />
-                <span>Watch Party</span>
+                <span title="Watch Party">Xem chung</span>
               </button>
 
               {/* 2. Phim mới */}
@@ -2037,7 +2023,7 @@ export function HomePage() {
                       : "text-zinc-400 group-hover:text-pink-400"
                   }`}
                 />
-                <span>Phim mới</span>
+                <span title="Phim mới">Mới</span>
                 {selectedNav === "phim-moi" && (
                   <span className="ml-auto w-1.5 h-1.5 rounded-full bg-pink-400 shadow-[0_0_6px_#f43f5e]" />
                 )}
@@ -2423,7 +2409,7 @@ export function HomePage() {
                         : "text-zinc-400 group-hover:text-pink-400"
                     }`}
                   />
-                  <span>Lịch sử xem</span>
+                  <span title="Lịch sử xem">Lịch sử</span>
                 </div>
                 {continueList.length > 0 && (
                   <span className="text-[11px] text-zinc-400">{continueList.length} phim</span>
@@ -2440,11 +2426,11 @@ export function HomePage() {
             <nav className="space-y-1">
               <button
                 onClick={() => setShowSourceModal(true)}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04] transition duration-200 group"
+                className="desktop-source-nav w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04] transition duration-200 group"
               >
                 <div className="flex items-center gap-3">
                   <Server className="w-4 h-4 text-zinc-400 group-hover:text-pink-400" />
-                  <span>Nguồn phim</span>
+                  <span title="Nguồn phim">Nguồn</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -2490,7 +2476,7 @@ export function HomePage() {
                 className="mt-1 w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white text-xs font-bold shadow-md shadow-pink-600/20 transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Crown className="w-3.5 h-3.5 fill-current" />
-                <span>Mua VIP / Chi tiết tính năng VIP</span>
+                <span><span className="lg:hidden">Mua VIP / Chi tiết tính năng VIP</span><span className="hidden lg:inline">Mochi VIP</span></span>
               </button>
             </div>
           </div>
@@ -2509,10 +2495,10 @@ export function HomePage() {
       {/* ------------------------------------------------------------- */}
       {/* MAIN VIEW AREA                                                */}
       {/* ------------------------------------------------------------- */}
-      <div className="flex-1 min-w-0 lg:ml-[268px] flex flex-col min-h-screen">
+      <div className="desktop-main flex-1 min-w-0 lg:ml-[268px] flex flex-col min-h-screen">
         {/* TOPBAR (Thanh công cụ duy nhất, không tạo nav ngang riêng) */}
-        <header className="sticky top-0 z-40 h-20 px-4 sm:px-8 flex items-center justify-between bg-[#09090d]/85 backdrop-blur-xl border-b border-white/[0.05]">
-          <div className="flex items-center gap-4 flex-1 max-w-2xl">
+        <header className="sticky top-0 z-40 h-20 px-3 sm:px-8 flex items-center justify-between bg-[#09090d]/85 backdrop-blur-xl border-b border-white/[0.05]">
+          <div className="flex items-center gap-2.5 sm:gap-4 flex-1 max-w-2xl min-w-0">
             <button
               onClick={() => setIsSidebarOpenMobile(true)}
               className="lg:hidden p-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 hover:text-white cursor-pointer"
@@ -2671,7 +2657,7 @@ export function HomePage() {
           </div>
 
           {/* Right Topbar Tools */}
-          <div className="flex items-center gap-3 ml-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 ml-2 sm:ml-4 shrink-0">
             <button
               onClick={() => setShowSourceModal(true)}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#13131b] hover:bg-[#181822] border border-white/[0.08] text-xs font-semibold text-zinc-200 transition group shadow-sm cursor-pointer"
@@ -2817,22 +2803,6 @@ export function HomePage() {
               )}
             </div>
 
-            {/* Theme Mode Toggle (Nút đổi light/dark luôn hiện mobile & desktop) */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="relative p-2.5 rounded-xl bg-[#13131b] hover:bg-[#181822] border border-white/[0.08] text-zinc-300 hover:text-white transition cursor-pointer flex items-center justify-center shrink-0"
-              aria-label={
-                theme === "dark" ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"
-              }
-              title={theme === "dark" ? "Giao diện sáng" : "Giao diện tối"}
-            >
-              {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-amber-400 transition-transform duration-300 hover:rotate-45" />
-              ) : (
-                <Moon className="w-4 h-4 text-pink-400 transition-transform duration-300 hover:-rotate-12" />
-              )}
-            </button>
 
             {/* Topbar User Avatar & Account Menu */}
             <div ref={userMenuRef} className="relative">
@@ -2979,6 +2949,18 @@ export function HomePage() {
                       <span>Thông tin Mochi VIP</span>
                     </button>
 
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        void navigate({ to: "/settings" });
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+                    >
+                      <Settings className="w-3.5 h-3.5 text-pink-400" />
+                      <span>Cài đặt</span>
+                    </button>
+
                     {(user?.email?.toLowerCase() === "lacviet55@proton.me" ||
                       user?.app_metadata?.role === "admin" ||
                       user?.app_metadata?.role === "deputy_admin") && (
@@ -3020,7 +3002,7 @@ export function HomePage() {
         {/* ------------------------------------------------------------- */}
         {/* BODY CONTENT BY NAVIGATION TAB                                */}
         {/* ------------------------------------------------------------- */}
-        <main ref={mainContentRef} className="flex-1 px-4 sm:px-8 py-6 space-y-10">
+        <main ref={mainContentRef} className="flex-1 px-3 sm:px-8 py-6 pb-24 lg:pb-8 space-y-10">
           {/* TAB 1: YÊU THÍCH (Favorites) */}
           {selectedNav === "yeu-thich" && (
             <FavoritesTab
@@ -4094,6 +4076,27 @@ export function HomePage() {
           </div>
         </div>
       )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* MOBILE BOTTOM NAVIGATION DOCK                                 */}
+      {/* ------------------------------------------------------------- */}
+      <MobileBottomDock
+        activeTab={
+          selectedNav === "yeu-thich"
+            ? "yeu-thich"
+            : selectedNav === "watch-party"
+              ? "party"
+              : selectedNav === "phim-le" || selectedNav === "phim-bo" || selectedNav === "the-loai"
+                ? "phim"
+                : "trang-chu"
+        }
+        onTabSelect={(tab) => {
+          if (tab === "trang-chu") navigateToCategory("trang-chu");
+          else if (tab === "phim") navigateToCategory("phim-le");
+          else if (tab === "party") navigateToCategory("watch-party");
+          else if (tab === "yeu-thich") navigateToCategory("yeu-thich");
+        }}
+      />
 
       {/* ------------------------------------------------------------- */}
       {/* MODAL 2: SOURCE HEALTH PING & SELECTOR                        */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Copy, Mic, Languages, Volume2, Server, Database, Lock, Unlock } from "lucide-react";
+import { Copy, Mic, Languages, Volume2, Server, Database, Lock, Unlock, Users } from "lucide-react";
 import type { EpisodeServer, SourceId } from "@/lib/types";
 import { SOURCES } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
@@ -17,7 +17,7 @@ interface PlayerRightbarProps {
   onChangeProvider?: (provider: SourceId) => void;
   onShowToast: (msg: string) => void;
   partyCode?: string;
-  onPartyJoined?: (code: string) => void;
+  onPartyJoined?: (party: { code: string; slug: string; source: SourceId; ep_index: number; srv_index: number }) => void;
 }
 
 export function detectServerLang(
@@ -126,7 +126,7 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
         setScheduledAt("");
         return;
       }
-      onPartyJoined?.(result.party.code);
+      onPartyJoined?.(result.party);
       onShowToast(
         action === "create"
           ? `Đã tạo phòng ${result.party.code}`
@@ -412,19 +412,15 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
               {!partyCode && (
                 <>
                   <input
+                    className="party-input"
                     value={joinCode}
                     onChange={(event) => setJoinCode(event.target.value.slice(0, 6))}
-                    placeholder="MÃ PHÒNG (để trống nếu tạo)"
+                    placeholder="Mã phòng (để trống nếu tạo)"
                     aria-label="Mã Watch Party"
-                    style={{
-                      width: "100%",
-                      marginBottom: 8,
-                      textTransform: "uppercase",
-                      gridColumn: "1 / -1",
-                    }}
                   />
                   <input
                     type="password"
+                    className="party-input"
                     minLength={4}
                     maxLength={72}
                     autoComplete="new-password"
@@ -432,27 +428,25 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
                     onChange={(event) => setPartyPassword(event.target.value)}
                     placeholder="Mật khẩu phòng (không bắt buộc)"
                     aria-label="Mật khẩu phòng"
-                    style={{ width: "100%", marginBottom: 8, gridColumn: "1 / -1" }}
                   />
                   <input
                     type="datetime-local"
+                    className="party-input"
                     value={scheduledAt}
                     min={new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
                       .toISOString()
                       .slice(0, 16)}
                     onChange={(event) => setScheduledAt(event.target.value)}
                     aria-label="Lịch mở phòng"
-                    style={{ width: "100%", marginBottom: 8, gridColumn: "1 / -1" }}
                   />
                 </>
               )}
               {partyCode ? (
                 <button
                   type="button"
-                  className="primary"
+                  className="primary party-copy-btn"
                   onClick={() => void copyPartyCode()}
                   aria-label={`Sao chép mã phòng ${partyCode}`}
-                  style={{ width: "100%", gridColumn: "1 / -1", height: 42, fontSize: 13 }}
                 >
                   <strong style={{ fontFamily: "monospace", fontSize: 16, letterSpacing: 2 }}>
                     {partyCode}
@@ -462,12 +456,12 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
               ) : (
                 <button
                   type="button"
-                  className="primary"
+                  className="primary party-main-btn"
                   id="joinPartyBtn"
-                  style={{ width: "100%", gridColumn: "1 / -1" }}
                   disabled={partyBusy}
                   onClick={() => void partyRequest(joinCode ? "join" : "create")}
                 >
+                  <Users style={{ width: 17, height: 17, marginRight: 6 }} />
                   {partyBusy
                     ? "Đang kết nối..."
                     : joinCode
@@ -478,17 +472,17 @@ export const PlayerRightbar: React.FC<PlayerRightbarProps> = ({
               {partyCode && currentParty?.is_host && (
                 <button
                   type="button"
+                  className="party-lock-btn"
                   disabled={partyBusy}
                   onClick={() => void togglePartyLock()}
-                  style={{ width: "100%", gridColumn: "1 / -1" }}
                 >
                   {currentParty.join_locked ? (
                     <>
-                      <Unlock /> Mở khóa phòng
+                      <Unlock style={{ width: 15, height: 15 }} /> Mở khóa phòng
                     </>
                   ) : (
                     <>
-                      <Lock /> Khóa phòng
+                      <Lock style={{ width: 15, height: 15 }} /> Khóa phòng
                     </>
                   )}
                 </button>

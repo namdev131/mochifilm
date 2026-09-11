@@ -11,13 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
+import { Route as ActorRouteImport } from './routes/actor'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ApiActorRouteImport } from './routes/api/actor'
 import { Route as ApiAdminRouteImport } from './routes/api/admin'
 import { Route as ApiEpisodeWatcherRouteImport } from './routes/api/episode-watcher'
 import { Route as ApiMovieMetadataRouteImport } from './routes/api/movie-metadata'
+import { Route as ApiPromocodeRouteImport } from './routes/api/promocode'
 import { Route as ApiRatingsRouteImport } from './routes/api/ratings'
 import { Route as ApiWatchHistoryRouteImport } from './routes/api/watch-history'
 import { Route as ApiWatchPartyRouteImport } from './routes/api/watch-party'
@@ -33,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActorRoute = ActorRouteImport.update({
+  id: '/actor',
+  path: '/actor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -55,6 +64,16 @@ const SearchRoute = SearchRouteImport.update({
   path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiActorRoute = ApiActorRouteImport.update({
+  id: '/api/actor',
+  path: '/api/actor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminRoute = ApiAdminRouteImport.update({
   id: '/api/admin',
   path: '/api/admin',
@@ -68,6 +87,11 @@ const ApiEpisodeWatcherRoute = ApiEpisodeWatcherRouteImport.update({
 const ApiMovieMetadataRoute = ApiMovieMetadataRouteImport.update({
   id: '/api/movie-metadata',
   path: '/api/movie-metadata',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPromocodeRoute = ApiPromocodeRouteImport.update({
+  id: '/api/promocode',
+  path: '/api/promocode',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRatingsRoute = ApiRatingsRouteImport.update({
@@ -104,13 +128,17 @@ const ApiPublicVsmovStreamRoute = ApiPublicVsmovStreamRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/actor': typeof ActorRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/legal': typeof LegalRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
+  '/api/actor': typeof ApiActorRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
   '/api/movie-metadata': typeof ApiMovieMetadataRoute
+  '/api/promocode': typeof ApiPromocodeRoute
   '/api/ratings': typeof ApiRatingsRoute
   '/api/watch-history': typeof ApiWatchHistoryRoute
   '/api/watch-party': typeof ApiWatchPartyRoute
@@ -121,13 +149,17 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/actor': typeof ActorRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/legal': typeof LegalRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
+  '/api/actor': typeof ApiActorRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
   '/api/movie-metadata': typeof ApiMovieMetadataRoute
+  '/api/promocode': typeof ApiPromocodeRoute
   '/api/ratings': typeof ApiRatingsRoute
   '/api/watch-history': typeof ApiWatchHistoryRoute
   '/api/watch-party': typeof ApiWatchPartyRoute
@@ -139,13 +171,17 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/actor': typeof ActorRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/legal': typeof LegalRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
+  '/api/actor': typeof ApiActorRoute
   '/api/admin': typeof ApiAdminRoute
   '/api/episode-watcher': typeof ApiEpisodeWatcherRoute
   '/api/movie-metadata': typeof ApiMovieMetadataRoute
+  '/api/promocode': typeof ApiPromocodeRoute
   '/api/ratings': typeof ApiRatingsRoute
   '/api/watch-history': typeof ApiWatchHistoryRoute
   '/api/watch-party': typeof ApiWatchPartyRoute
@@ -158,13 +194,17 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/account'
+    | '/actor'
     | '/admin'
     | '/auth'
     | '/legal'
     | '/search'
+    | '/settings'
+    | '/api/actor'
     | '/api/admin'
     | '/api/episode-watcher'
     | '/api/movie-metadata'
+    | '/api/promocode'
     | '/api/ratings'
     | '/api/watch-history'
     | '/api/watch-party'
@@ -175,13 +215,17 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
+    | '/actor'
     | '/admin'
     | '/auth'
     | '/legal'
     | '/search'
+    | '/settings'
+    | '/api/actor'
     | '/api/admin'
     | '/api/episode-watcher'
     | '/api/movie-metadata'
+    | '/api/promocode'
     | '/api/ratings'
     | '/api/watch-history'
     | '/api/watch-party'
@@ -192,13 +236,17 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/account'
+    | '/actor'
     | '/admin'
     | '/auth'
     | '/legal'
     | '/search'
+    | '/settings'
+    | '/api/actor'
     | '/api/admin'
     | '/api/episode-watcher'
     | '/api/movie-metadata'
+    | '/api/promocode'
     | '/api/ratings'
     | '/api/watch-history'
     | '/api/watch-party'
@@ -210,13 +258,17 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
+  ActorRoute: typeof ActorRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   LegalRoute: typeof LegalRoute
   SearchRoute: typeof SearchRoute
+  SettingsRoute: typeof SettingsRoute
+  ApiActorRoute: typeof ApiActorRoute
   ApiAdminRoute: typeof ApiAdminRoute
   ApiEpisodeWatcherRoute: typeof ApiEpisodeWatcherRoute
   ApiMovieMetadataRoute: typeof ApiMovieMetadataRoute
+  ApiPromocodeRoute: typeof ApiPromocodeRoute
   ApiRatingsRoute: typeof ApiRatingsRoute
   ApiWatchHistoryRoute: typeof ApiWatchHistoryRoute
   ApiWatchPartyRoute: typeof ApiWatchPartyRoute
@@ -239,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/actor': {
+      id: '/actor'
+      path: '/actor'
+      fullPath: '/actor'
+      preLoaderRoute: typeof ActorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -269,6 +328,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/actor': {
+      id: '/api/actor'
+      path: '/api/actor'
+      fullPath: '/api/actor'
+      preLoaderRoute: typeof ApiActorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin': {
       id: '/api/admin'
       path: '/api/admin'
@@ -288,6 +361,13 @@ declare module '@tanstack/react-router' {
       path: '/api/movie-metadata'
       fullPath: '/api/movie-metadata'
       preLoaderRoute: typeof ApiMovieMetadataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/promocode': {
+      id: '/api/promocode'
+      path: '/api/promocode'
+      fullPath: '/api/promocode'
+      preLoaderRoute: typeof ApiPromocodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ratings': {
@@ -338,13 +418,17 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
+  ActorRoute: ActorRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   LegalRoute: LegalRoute,
   SearchRoute: SearchRoute,
+  SettingsRoute: SettingsRoute,
+  ApiActorRoute: ApiActorRoute,
   ApiAdminRoute: ApiAdminRoute,
   ApiEpisodeWatcherRoute: ApiEpisodeWatcherRoute,
   ApiMovieMetadataRoute: ApiMovieMetadataRoute,
+  ApiPromocodeRoute: ApiPromocodeRoute,
   ApiRatingsRoute: ApiRatingsRoute,
   ApiWatchHistoryRoute: ApiWatchHistoryRoute,
   ApiWatchPartyRoute: ApiWatchPartyRoute,

@@ -1,9 +1,12 @@
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { MochiLoadingScreen } from "@/components/common/MochiLoadingScreen";
+import { NotFoundPage } from "@/components/common/NotFoundPage";
 import { AuthDataProvider } from "@/lib/auth-data-provider";
+import { initializeMochiSettings } from "@/lib/mochi-settings";
 import appCss from "../styles.css?url";
+import desktopNavigationCss from "../styles/desktop-navigation.css?url";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -19,6 +22,7 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "stylesheet", href: desktopNavigationCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -29,9 +33,11 @@ export const Route = createRootRoute({
   }),
   shellComponent: RootShell,
   component: RootComponent,
+  notFoundComponent: NotFoundPage,
 });
 
 function RootComponent() {
+  useEffect(() => initializeMochiSettings(), []);
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -50,8 +56,8 @@ function RootComponent() {
         <QueryClientProvider client={queryClient}>
           <Outlet />
         </QueryClientProvider>
+        <MochiLoadingScreen />
       </AuthDataProvider>
-      <MochiLoadingScreen />
     </>
   );
 }
@@ -61,11 +67,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="vi" className="dark">
       <head>
         <HeadContent />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("mochi_theme");if(t==="light"||t==="dark"){document.documentElement.className=t;}}catch(e){}})();`,
-          }}
-        />
+
         <script
           dangerouslySetInnerHTML={{
             __html: `if("serviceWorker" in navigator){addEventListener("load",function(){navigator.serviceWorker.register("/sw.js")})}`,

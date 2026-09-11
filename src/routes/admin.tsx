@@ -13,6 +13,7 @@ import {
   type AdminDatabaseStats,
   type AdminParty,
   type AdminUser,
+  type AdminVipPrice,
   type AuditEntry,
   type Permission,
 } from "@/components/admin/admin-constants";
@@ -45,18 +46,14 @@ export function AdminPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "light">(() =>
-    typeof window === "undefined"
-      ? "dark"
-      : localStorage.getItem("mochi_admin_theme") === "light"
-        ? "light"
-        : "dark",
-  );
+
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [parties, setParties] = useState<AdminParty[]>([]);
   const [comments, setComments] = useState<AdminComment[]>([]);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [vipPrices, setVipPrices] = useState<AdminVipPrice[]>([]);
+  const [createdPromocode, setCreatedPromocode] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -126,6 +123,7 @@ export function AdminPage() {
         setComments(data.comments || []);
         setAuditLog(data.auditLog || []);
         setPermissions(data.permissions || []);
+        setVipPrices(data.vipPrices || []);
         setIsOfflineMode(false);
       } catch (error) {
         setUsers([]);
@@ -255,7 +253,7 @@ export function AdminPage() {
 
   return (
     <div
-      data-admin-theme={theme}
+      data-admin-theme="dark"
       className="min-h-screen bg-[#0c090f] text-[#fff8fa] font-sans antialiased"
     >
       <a
@@ -288,7 +286,7 @@ export function AdminPage() {
         pendingCommentsCount={comments.filter((item) => item.status === "pending").length}
         isAdmin={isAdmin}
       />
-      <div className="lg:pl-[232px] xl:pr-[264px] min-h-screen flex flex-col">
+      <div className="desktop-admin-main lg:pl-[232px] xl:pr-[264px] min-h-screen flex flex-col">
         <AdminTopbar
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           searchQuery={searchQuery}
@@ -296,12 +294,7 @@ export function AdminPage() {
           isOfflineMode={isOfflineMode}
           onRefresh={() => loadDashboardData()}
           isBusy={isBusy}
-          theme={theme}
-          onToggleTheme={() => {
-            const next = theme === "dark" ? "light" : "dark";
-            setTheme(next);
-            localStorage.setItem("mochi_admin_theme", next);
-          }}
+
           user={user}
           isAdmin={isAdmin}
         />
@@ -314,6 +307,7 @@ export function AdminPage() {
             activeTab={activeTab}
             onSelectTab={setActiveTab}
             users={users}
+            vipPrices={vipPrices}
             filteredUsers={filteredUsers}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -322,6 +316,34 @@ export function AdminPage() {
               void mutate(
                 { action: "setDeputy", id: target.id, enabled: target.role !== "deputy_admin" },
                 "Đã cập nhật vai trò",
+              )
+            }
+            onSetVipPlan={(target, plan) =>
+              void mutate(
+                { action: "setVip", id: target.id, enabled: plan !== null, plan },
+                plan ? "Đã cấp gói Mochi VIP" : "Đã thu hồi VIP",
+              )
+            }
+            onSetVipPrices={(prices) =>
+              void mutate({ action: "setVipPrices", prices }, "Đã cập nhật giá Mochi VIP")
+            }
+            createdPromocode={createdPromocode}
+            onCreateVipPromocode={(vipExpiresAt) => void (async () => {
+              setIsBusy(true);
+              try {
+                const data = await requestApi({ action: "createVipPromocode", vip_expires_at: new Date(vipExpiresAt).toISOString() });
+                setCreatedPromocode(data.code);
+                showToast("Đã tạo promocode VIP");
+              } catch (error) {
+                showToast(error instanceof Error ? error.message : "Không tạo được promocode", "error");
+              } finally {
+                setIsBusy(false);
+              }
+            })()}
+            onBroadcastNotification={(title, message) =>
+              void mutate(
+                { action: "broadcastNotification", title, message },
+                "Đã gửi thông báo toàn server",
               )
             }
             onOpenDeleteConfirm={setDeleteConfirm}
@@ -348,6 +370,10 @@ export function AdminPage() {
             onCloseParty={(party) =>
               void mutate({ action: "closeParty", id: party.id }, `Đã đóng phòng ${party.code}`)
             }
+            onDeleteParty={(party) => {
+              if (window.confirm(`Xóa vĩnh viễn phòng ${party.code}? Tin nhắn và thành viên trong phòng cũng sẽ bị xóa.`))
+                void mutate({ action: "deleteParty", id: party.id }, `Đã xóa phòng ${party.code}`);
+            }}
             onTogglePartyLock={(party) =>
               void mutate(
                 { action: "lockParty", id: party.id, locked: !party.join_locked },

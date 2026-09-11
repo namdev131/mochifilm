@@ -19,7 +19,9 @@ export interface AdminUser {
   id: string;
   email: string;
   display_name: string | null;
-  role: "admin" | "deputy_admin" | "member";
+  role: "admin" | "deputy_admin" | "vip" | "member";
+  vip_expires_at: string | null;
+  vip_plan: "monthly" | "quarterly" | "yearly" | null;
   created_at: string;
   last_sign_in_at: string | null;
   banned_until?: string | null;
@@ -67,6 +69,12 @@ export interface AdminDatabaseStats {
   ratings: number;
   notifications: number;
   watchParties: number;
+}
+
+export interface AdminVipPrice {
+  plan_id: "monthly" | "quarterly" | "yearly";
+  original_price: number;
+  price: number;
 }
 
 export interface PermRow {

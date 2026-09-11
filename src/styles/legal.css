@@ -137,13 +137,16 @@
   display: flex;
   justify-content: space-between;
   gap: 15px;
-  color: #75636c;
-  font-size: 9.5px;
+  color: #a3949d;
+  font-size: 11px;
 }
 .legal-footer a {
   color: #ff86aa;
 }
 @media (max-width: 760px) {
+  .legal-shell {
+    padding-bottom: max(84px, calc(72px + env(safe-area-inset-bottom)));
+  }
   .legal-layout {
     grid-template-columns: 1fr;
   }
@@ -152,9 +155,14 @@
     display: flex;
     overflow: auto;
     white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .legal-nav::-webkit-scrollbar {
+    display: none;
   }
   .legal-nav a {
     flex: 0 0 auto;
+    font-size: 12px;
   }
   .legal-top {
     flex-direction: column;

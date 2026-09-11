@@ -21,6 +21,17 @@ export const list = query({
   },
 });
 
+export const get = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const uid = await userId(ctx);
+    return await ctx.db
+      .query("watchHistory")
+      .withIndex("by_user_slug", (q) => q.eq("userId", uid).eq("slug", slug))
+      .unique();
+  },
+});
+
 export const remove = mutation({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {

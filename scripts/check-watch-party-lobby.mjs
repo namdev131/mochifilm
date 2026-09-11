@@ -3,21 +3,24 @@ import { readFile } from "node:fs/promises";
 
 const [home, lobby, rightbar, player, api, migration, timeoutMigration, watchPartyCss] =
   await Promise.all([
-  readFile(new URL("../src/routes/index.tsx", import.meta.url), "utf8"),
-  readFile(new URL("../src/components/home/WatchPartyLobby.tsx", import.meta.url), "utf8"),
-  readFile(new URL("../src/components/player/PlayerRightbar.tsx", import.meta.url), "utf8"),
-  readFile(new URL("../src/routes/watch.$slug.tsx", import.meta.url), "utf8"),
-  readFile(new URL("../src/routes/api/watch-party.ts", import.meta.url), "utf8"),
-  readFile(
-    new URL("../supabase/migrations/20260908000000_watch_party_password.sql", import.meta.url),
-    "utf8",
-  ),
-  readFile(
-    new URL("../supabase/migrations/20260908000001_watch_party_host_timeout.sql", import.meta.url),
-    "utf8",
-  ),
-  readFile(new URL("../src/styles/watch-party-room.css", import.meta.url), "utf8"),
-]);
+    readFile(new URL("../src/routes/index.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/home/WatchPartyLobby.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/player/PlayerRightbar.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/routes/watch.$slug.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/routes/api/watch-party.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../supabase/migrations/20260908000000_watch_party_password.sql", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260908000001_watch_party_host_timeout.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(new URL("../src/styles/watch-party-room.css", import.meta.url), "utf8"),
+  ]);
 
 assert.match(home, /navigateToCategory\("watch-party"\)/);
 assert.match(home, /selectedNav === "watch-party"/);

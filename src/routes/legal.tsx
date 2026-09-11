@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { type ReactNode } from "react";
+import { MobileBottomDock } from "@/components/common/MobileBottomDock";
 import "@/styles/legal.css";
 
 export const Route = createFileRoute("/legal")({ component: LegalPage });
@@ -24,8 +26,12 @@ function LegalPage() {
       <div className="legal-shell">
         <header className="legal-top">
           <div>
-            <Link to="/" className="legal-brand">
-              Mochi <span>Film</span>
+            <Link to="/" className="inline-block" aria-label="Về trang chủ Mochi Film">
+              <img
+                src="/assets/mochi/wordmark.webp"
+                alt="Mochi Film"
+                className="h-10 sm:h-12 w-auto object-contain drop-shadow-[0_4px_12px_rgba(255,79,131,0.2)]"
+              />
             </Link>
             <p>Điều khoản sử dụng & Chính sách quyền riêng tư</p>
           </div>
@@ -187,6 +193,7 @@ function LegalPage() {
           <Link to="/">Về trang chủ</Link>
         </footer>
       </div>
+      <MobileBottomDock />
     </main>
   );
 }

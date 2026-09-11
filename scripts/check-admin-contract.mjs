@@ -12,8 +12,8 @@ const migration = read("supabase/migrations/20260902000001_admin_watch_party_ope
 assert(existsSync(new URL("../src/styles/admin.css", import.meta.url)), "missing scoped admin CSS");
 const css = read("src/styles/admin.css");
 assert.match(route, /import "@\/styles\/admin\.css"/);
-assert.match(route, /data-admin-theme=\{theme\}/);
-assert.match(css, /\[data-admin-theme="light"\]/);
+assert.match(route, /data-admin-theme="dark"/);
+assert.doesNotMatch(css, /\[data-admin-theme="light"\]/);
 assert.doesNotMatch(css, /box-shadow:\s*0\s+0/);
 
 assert.match(route, /user\.email\?\.toLowerCase\(\) === ADMIN_EMAIL/);
@@ -30,6 +30,7 @@ for (const action of [
   "warnParty",
   "lockParty",
   "closeParty",
+  "deleteParty",
   "moderateComment",
   "deleteComment",
 ]) {

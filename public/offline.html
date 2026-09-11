@@ -35,10 +35,11 @@
       }
       .mascot {
         display: block;
-        width: 118px;
-        height: 118px;
+        width: 168px;
+        height: 182px;
         object-fit: contain;
         margin: 16px auto 4px;
+        filter: drop-shadow(0 12px 20px #dc4b821f);
       }
       h1 {
         margin: 8px 0 6px;
@@ -75,10 +76,46 @@
   <body>
     <main class="card">
       <img class="wordmark" src="/assets/mochi/wordmark.webp" alt="Mochi Film" />
-      <img class="mascot" src="/assets/mochi/mascot-mini.png" alt="" />
+      <canvas
+        class="mascot"
+        id="sadMochiCanvas"
+        width="384"
+        height="416"
+        role="img"
+        aria-label="Mochi hơi buồn vì mất kết nối mạng"
+      ></canvas>
       <h1>Bạn đang ngoại tuyến</h1>
       <p>Mochi chưa thể kết nối mạng. Hãy thử lại khi đường truyền ổn định nhé.</p>
       <button type="button" onclick="location.reload()">Thử lại</button>
     </main>
+    <script>
+      (() => {
+        const canvas = document.getElementById("sadMochiCanvas");
+        const context = canvas.getContext("2d");
+        const atlas = new Image();
+        const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        let frame = 0;
+        let last = 0;
+        let animation = 0;
+
+        const draw = (now = 0) => {
+          if (!last) last = now;
+          if (!reducedMotion && now - last >= 1000 / 6) {
+            frame = (frame + 1) % 8;
+            last = now;
+          }
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(atlas, frame * 192, 5 * 208, 192, 208, 0, 0, 384, 416);
+          if (!reducedMotion) animation = requestAnimationFrame(draw);
+        };
+
+        atlas.addEventListener("load", () => draw(), { once: true });
+        atlas.src = "/assets/mochi/loading-atlas.png";
+        document.addEventListener("visibilitychange", () => {
+          cancelAnimationFrame(animation);
+          if (!document.hidden && !reducedMotion) animation = requestAnimationFrame(draw);
+        });
+      })();
+    </script>
   </body>
 </html>

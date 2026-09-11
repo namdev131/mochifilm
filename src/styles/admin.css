@@ -11,21 +11,6 @@
   font-family: var(--font-ui, "Be Vietnam Pro", sans-serif);
 }
 
-[data-admin-theme="light"] {
-  --admin-bg: #fff8fa;
-  --admin-surface: #fff;
-  --admin-border: rgb(72 40 55 / 0.16);
-  --admin-text: #2a1723;
-  --admin-muted: #725d68;
-  --admin-accent: #bd3f63;
-  color-scheme: light;
-  filter: invert(0.9) hue-rotate(165deg);
-}
-
-[data-admin-theme="light"] img,
-[data-admin-theme="light"] video {
-  filter: invert(1) hue-rotate(195deg);
-}
 
 @media (max-width: 639px) {
   [data-admin-theme] table {

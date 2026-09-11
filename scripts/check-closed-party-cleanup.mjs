@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const sql = readFileSync("supabase/migrations/20260909000002_closed_party_cleanup.sql", "utf8");
+const api = readFileSync("src/routes/api/watch-party.ts", "utf8");
+const schema = readFileSync("supabase/migrations/20260803025029_04654d5a-861a-49db-9569-d2d4055807ad.sql", "utf8");
+assert.match(sql, /delete_closed_watch_parties/i);
+assert.match(sql, /closed\s*=\s*true/i);
+assert.match(sql, /cron\.schedule/i);
+assert.match(sql, /\*\/1 \* \* \* \*/);
+assert.match(api, /closed=true\s+or/i);
+assert.match(schema, /party_id[\s\S]*on delete cascade/i);
+console.log("Closed Watch Party cleanup passed: cascade delete scheduled every minute");

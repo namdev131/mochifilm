@@ -43,6 +43,24 @@ export const toggle = mutation({
   },
 });
 
+export const set = mutation({
+  args: {
+    slug: v.string(),
+    name: v.string(),
+    poster: v.optional(v.string()),
+    source: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const uid = await userId(ctx);
+    const existing = await ctx.db
+      .query("favorites")
+      .withIndex("by_user_slug", (q) => q.eq("userId", uid).eq("slug", args.slug))
+      .first();
+    if (existing) return existing._id;
+    return await ctx.db.insert("favorites", { userId: uid, ...args, createdAt: Date.now() });
+  },
+});
+
 export const remove = mutation({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {

@@ -3,7 +3,7 @@ import { Pool, type PoolClient } from "pg";
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 
-const ADMIN_EMAIL = "lacviet55@proton.me";
+const ADMIN_EMAILS = ["lacviet55@proton.me", "admin@mochifilm.vn"];
 const CODE = /^[A-Z2-9]{6}$/;
 const HOST_ABSENCE_TIMEOUT_MINUTES = 5;
 const scrypt = promisify(scryptCallback);
@@ -84,7 +84,8 @@ async function ensureSchema() {
 async function deleteStaleParties() {
   await db().query(
     `delete from public.watch_parties
-     where closed=false and scheduled_at <= now() and last_host_seen_at < now() - ($1 * interval '1 minute')`,
+     where closed=true
+        or (closed=false and scheduled_at <= now() and last_host_seen_at < now() - ($1 * interval '1 minute'))`,
     [HOST_ABSENCE_TIMEOUT_MINUTES],
   );
 }
@@ -105,7 +106,8 @@ async function currentUser(request: Request): Promise<CurrentUser | null> {
   };
   return user.id ? { id: user.id, email: user.email, role: user.app_metadata?.role } : null;
 }
-const isAdmin = (user: CurrentUser) => user.email?.toLowerCase() === ADMIN_EMAIL;
+const isAdmin = (user: CurrentUser) =>
+  user.role === "admin" || ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "");
 async function hasPermission(user: CurrentUser, permission: string) {
   if (isAdmin(user)) return true;
   if (user.role !== "deputy_admin") return false;
@@ -338,7 +340,7 @@ async function handler(request: Request) {
     if (body.action === "playback") {
       if (!(await memberOrStaff(user, partyId))) return json({ error: "Chưa tham gia phòng" }, 403);
       const { rows } = await db().query(
-        "select position_seconds,is_playing,updated_at,ep_index,srv_index from public.watch_parties where id=$1 and closed=false",
+        "select position_seconds,is_playing,playback_updated_at,ep_index,srv_index,slug,source from public.watch_parties where id=$1 and closed=false",
         [partyId],
       );
       return rows[0]
@@ -371,12 +373,14 @@ async function handler(request: Request) {
       const { rows } = await db().query(
         `select m.user_id,coalesce(p.display_name,u.raw_user_meta_data->>'display_name',split_part(u.email,'@',1)) as display_name,
                 m.created_at as joined_at,
-                case when lower(u.email)=$2 then 'admin'
+                case when lower(u.email)=any($2) or u.raw_app_meta_data->>'role'='admin' then 'admin'
                      when u.raw_app_meta_data->>'role'='deputy_admin' then 'deputy_admin'
+                     when u.raw_app_meta_data->>'role'='vip'
+                       and (u.raw_app_meta_data->>'vip_expires_at')::timestamptz>now() then 'vip'
                      else 'member' end as staff_role
          from public.watch_party_members m left join public.profiles p on p.id=m.user_id
          left join auth.users u on u.id=m.user_id where m.party_id=$1 order by m.created_at`,
-        [partyId, ADMIN_EMAIL],
+        [partyId, ADMIN_EMAILS],
       );
       return json({ members: rows });
     }
@@ -392,12 +396,14 @@ async function handler(request: Request) {
       if (!(await memberOrStaff(user, partyId))) return json({ error: "Forbidden" }, 403);
       const { rows } = await db().query(
         `select wm.id,wm.party_id,wm.user_id,wm.display_name,wm.content,wm.created_at,
-                case when lower(u.email)=$2 then 'admin'
+                case when lower(u.email)=any($2) or u.raw_app_meta_data->>'role'='admin' then 'admin'
                      when u.raw_app_meta_data->>'role'='deputy_admin' then 'deputy_admin'
+                     when u.raw_app_meta_data->>'role'='vip'
+                       and (u.raw_app_meta_data->>'vip_expires_at')::timestamptz>now() then 'vip'
                      else 'member' end as staff_role
          from public.watch_party_messages wm join auth.users u on u.id=wm.user_id
          where wm.party_id=$1 order by wm.created_at asc limit 200`,
-        [partyId, ADMIN_EMAIL],
+        [partyId, ADMIN_EMAILS],
       );
       return json({ messages: rows });
     }
@@ -407,7 +413,7 @@ async function handler(request: Request) {
       const { rows } = await db().query(
         `insert into public.watch_party_messages(party_id,user_id,display_name,content)
          select p.id,$2,
-           case when lower(u.email)=$4 then 'Nhím Admin'
+           case when lower(u.email)=any($4) or u.raw_app_meta_data->>'role'='admin' then 'Nhím Admin'
                 when u.raw_app_meta_data->>'role'='deputy_admin'
                   then 'Phó Admin Mochi · ' || coalesce(pr.display_name,u.raw_user_meta_data->>'display_name',split_part(u.email,'@',1),'Thành viên')
                 else coalesce(pr.display_name,u.raw_user_meta_data->>'display_name',split_part(u.email,'@',1),'Thành viên') end,
@@ -418,7 +424,7 @@ async function handler(request: Request) {
          left join public.profiles pr on pr.id=$2
          where p.id=$1 and p.closed=false and (p.chat_mode='all' or p.host_id=$2 or $5)
          returning *`,
-        [partyId, user.id, content, ADMIN_EMAIL, isAdmin(user)],
+        [partyId, user.id, content, ADMIN_EMAILS, isAdmin(user)],
       );
       if (!rows[0]) return json({ error: "Phòng đã đóng hoặc chat đang bị khoá" }, 403);
       return json({
@@ -428,7 +434,9 @@ async function handler(request: Request) {
             ? "admin"
             : user.role === "deputy_admin"
               ? "deputy_admin"
-              : "member",
+              : user.role === "vip"
+                ? "vip"
+                : "member",
         },
       });
     }
@@ -506,7 +514,7 @@ async function handler(request: Request) {
       if (!entries.length) return json({ error: "Không có thay đổi hợp lệ" }, 400);
       const sets = entries.map(([key], index) => `${key}=$${index + 3}`).join(",");
       const { rows } = await db().query(
-        `update public.watch_parties set ${sets},updated_at=now() where id=$1 and host_id=$2 and closed=false returning *`,
+        `update public.watch_parties set ${sets},playback_updated_at=now(),updated_at=now() where id=$1 and host_id=$2 and closed=false returning *`,
         [partyId, user.id, ...entries.map(([, value]) => value)],
       );
       if (!rows[0]) return json({ error: "Chỉ chủ phòng được điều khiển" }, 403);

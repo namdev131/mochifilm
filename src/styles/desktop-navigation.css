@@ -1,0 +1,256 @@
+/* Navbar tham chiếu: desktop only; giữ nguyên route, dữ liệu, handler và mobile UI. */
+@media (min-width: 1024px) {
+  .desktop-home-shell { flex-direction: column; }
+
+  aside.desktop-navigation,
+  .details-root aside.desktop-navigation,
+  .player-page-root aside.desktop-navigation {
+    position: relative;
+    inset: auto;
+    width: calc(100% - 24px);
+    min-width: 0;
+    max-width: none;
+    min-height: 58px;
+    margin: 12px 12px 0;
+    padding: 7px 10px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    transform: none;
+    translate: none;
+    overflow: visible;
+    color: #f8f7fb;
+    background:
+      radial-gradient(circle at 10% 30%, rgba(255,79,134,.08), transparent 20%),
+      linear-gradient(180deg, #0c0b11 0%, #090910 100%);
+    border: 1px solid rgba(255,79,134,.22);
+    border-bottom: 0;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 18px 48px rgba(11,6,13,.17), inset 0 1px 0 rgba(255,255,255,.025);
+  }
+
+  .desktop-navigation > div:first-child {
+    flex: 0 0 104px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .desktop-navigation > div:first-child a > div,
+  .desktop-navigation > div:first-child [role="button"] > div { height: 44px; }
+  .desktop-navigation > div:first-child img {
+    width: 104px;
+    height: 44px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 10px rgba(255,79,134,.18));
+  }
+
+  .desktop-navigation > div:nth-child(2) {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+  }
+  .desktop-navigation > div:nth-child(2)::-webkit-scrollbar { display: none; }
+  .desktop-navigation > div:nth-child(2) > div { display: contents; }
+  .desktop-navigation > div:nth-child(2) > div > p { display: none; }
+  .desktop-navigation > div:nth-child(2) > div > nav { display: contents; }
+  .desktop-navigation nav > *,
+  .desktop-navigation nav > div > button {
+    width: auto;
+    margin-block: 0;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .desktop-navigation nav > a,
+  .desktop-navigation nav > button,
+  .desktop-navigation nav > div > button {
+    min-height: 42px;
+    padding: 0 12px;
+    gap: 8px;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    color: #d4cfda;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+  }
+  .desktop-navigation nav > a:hover,
+  .desktop-navigation nav > button:hover,
+  .desktop-navigation nav > div > button:hover {
+    color: #fff;
+    background: rgba(255,255,255,.045);
+  }
+  .desktop-navigation nav > a[class*="border-pink"],
+  .desktop-navigation nav > button[class*="border-pink"] {
+    color: #fff;
+    border-color: rgba(255,79,134,.45);
+    background: linear-gradient(180deg, rgba(255,79,134,.22), rgba(255,79,134,.10));
+    box-shadow: inset 0 0 18px rgba(255,79,134,.08);
+  }
+  .desktop-navigation nav svg { width: 16px; height: 16px; color: #f3ddec; }
+  .desktop-navigation nav > button > .ml-auto { display: none; }
+  .desktop-navigation nav > button > div,
+  .desktop-navigation nav > a > div { gap: 8px; }
+  .desktop-navigation nav > a,
+  .desktop-navigation nav > button { border-left-width: 1px; }
+  .desktop-navigation .desktop-source-nav { display: none; }
+  .desktop-navigation nav > a:focus-visible,
+  .desktop-navigation nav > button:focus-visible,
+  .desktop-navigation nav > div > button:focus-visible { outline: 2px solid #f472b6; outline-offset: 2px; }
+
+  .desktop-navigation #genre-dropdown-menu,
+  .desktop-navigation #country-dropdown-menu {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 360px;
+    max-height: min(65vh, 480px);
+    overflow-y: auto;
+    z-index: 110;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #151820, #10131a);
+    box-shadow: 0 22px 52px rgba(0,0,0,.34);
+  }
+
+  /* Thu gọn panel VIP thành action tròn như mẫu. */
+  .desktop-navigation > div:last-child {
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    backdrop-filter: none;
+  }
+  .desktop-navigation > div:last-child > div:first-child { display: none; }
+  .desktop-navigation > div:last-child > div:last-child {
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .desktop-navigation > div:last-child > div:last-child > div > div,
+  .desktop-navigation > div:last-child p { display: none; }
+  .desktop-navigation > div:last-child button {
+    width: auto;
+    min-height: 42px;
+    margin: 0;
+    padding: 0 16px;
+    border-radius: 999px;
+    white-space: nowrap;
+    background: linear-gradient(135deg, #ff2372, #ff4f86 60%, #ff6b98);
+    box-shadow: 0 8px 24px rgba(255,79,134,.22);
+  }
+
+  .desktop-home-shell > .desktop-main,
+  .player-page-root > .app { margin-left: 0; }
+  .details-root > .app { margin-left: 0 !important; }
+
+  .desktop-home-shell > .desktop-main > header,
+  .details-root .topbar,
+  .player-page-root .topbar {
+    position: relative;
+    top: auto;
+    width: calc(100% - 24px);
+    min-height: 56px;
+    height: 56px;
+    margin: 0 12px;
+    padding: 6px 10px 7px 126px;
+    gap: 10px;
+    color: #f8f7fb;
+    background: linear-gradient(180deg, #0c0b11 0%, #090910 100%);
+    border: 1px solid rgba(255,79,134,.22);
+    border-top-color: rgba(255,255,255,.05);
+    border-radius: 0 0 18px 18px;
+    box-shadow: 0 18px 48px rgba(11,6,13,.17);
+  }
+  .desktop-home-shell > .desktop-main > header > div:first-child { max-width: 980px; }
+  .desktop-home-shell > .desktop-main > header input,
+  .details-root .topbar .search form,
+  .player-page-root .topbar .search form {
+    height: 44px;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #15151d, #12131a);
+    box-shadow: none;
+  }
+  .desktop-home-shell > .desktop-main > header input { height: 42px; padding-block: 8px; }
+  .details-root .topbar .search input,
+  .player-page-root .topbar .search input { background: transparent; }
+  .desktop-home-shell > .desktop-main > header input:focus,
+  .details-root .topbar .search form:focus-within,
+  .player-page-root .topbar .search form:focus-within {
+    border-color: rgba(255,79,134,.48);
+    box-shadow: 0 0 0 3px rgba(255,79,134,.06);
+  }
+  .desktop-home-shell > .desktop-main > header button,
+  .details-root .topbar > .icon-btn,
+  .player-page-root .topbar > .icon-btn,
+  .details-root .topbar .user-mini,
+  .player-page-root .topbar .user-mini { border-radius: 13px; }
+
+  /* Detail CSS loads later: flatten its topbar and input explicitly. */
+  .details-root .topbar {
+    width: auto;
+    margin: 0 0 13px;
+    padding: 6px 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+  }
+  .details-root .topbar .search input { border: 0; }
+
+  aside.admin-navigation {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    transform: none;
+    translate: none;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+  .admin-navigation > div:first-child { border: 0; }
+  .admin-navigation > nav { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; flex: 1; }
+  .admin-navigation > nav > button { width: auto; margin: 0; white-space: nowrap; }
+  .admin-navigation > div:last-child { position: static; }
+  .desktop-admin-main { padding-left: 0; }
+
+  .account-page-root .account-page-layout { grid-template-columns: minmax(0, 1fr); }
+  .account-page-root .account-side { position: static; }
+  .account-page-root .account-side-nav { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+  .account-page-root .account-side-link { width: auto; white-space: nowrap; }
+  .account-page-root .account-side-quote,
+  .account-page-root .account-tabs { display: none; }
+
+  .legal-page .legal-layout,
+  .legal-layout { grid-template-columns: minmax(0, 1fr); }
+  .legal-layout .legal-nav { position: static; display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; }
+}
+
+@media (min-width: 1024px) and (max-width: 1180px) {
+  .desktop-navigation nav > a,
+  .desktop-navigation nav > button,
+  .desktop-navigation nav > div > button { padding-inline: 9px; }
+  .desktop-navigation > div:last-child { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-navigation *,
+  .topbar * { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}

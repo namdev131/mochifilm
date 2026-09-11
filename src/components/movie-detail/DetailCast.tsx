@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "@tanstack/react-router";
 
 interface DetailCastProps {
   actors?: string[];
@@ -23,7 +24,12 @@ export const DetailCast: React.FC<DetailCastProps> = ({ actors = [] }) => {
       {cleanActors.length > 0 ? (
         <div className="cast" id="castList">
           {cleanActors.map((actorName, idx) => (
-            <div key={`${actorName}-${idx}`} className="person">
+            <Link
+              to="/actor"
+              search={{ name: actorName, id: "" }}
+              key={`${actorName}-${idx}`}
+              className="person"
+            >
               <div
                 className="person-avatar-initials"
                 style={{
@@ -48,7 +54,7 @@ export const DetailCast: React.FC<DetailCastProps> = ({ actors = [] }) => {
               </div>
               <strong>{actorName}</strong>
               <small>Diễn viên</small>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (

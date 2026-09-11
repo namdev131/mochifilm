@@ -1,8 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
+import { trailerEmbed } from "@/lib/trailer";
 import { useQuery } from "@tanstack/react-query";
 import type { SourceId, EpisodeServerItem, MovieCard } from "@/lib/types";
 import { fetchDetail, fetchLatest, SOURCES } from "@/lib/api";
+import { useConvexAuth, useMutation, useQuery as useConvexQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 import "@/styles/details.css";
 import { DetailSidebar } from "@/components/movie-detail/DetailSidebar";
@@ -30,6 +33,10 @@ function MovieDetailPage() {
   const { slug } = Route.useParams();
   const search = Route.useSearch();
   const navigate = useNavigate();
+  const { isAuthenticated } = useConvexAuth();
+  const cloudFavorites = useConvexQuery(api.favorites.list, isAuthenticated ? {} : "skip");
+  const setCloudFavorite = useMutation(api.favorites.set);
+  const removeCloudFavorite = useMutation(api.favorites.remove);
 
   const currentSource: SourceId = search.source || "kkphim";
 
@@ -87,6 +94,7 @@ function MovieDetailPage() {
     sourceMovie && extra
       ? {
           ...sourceMovie,
+          trailer_url: sourceMovie.trailer_url || extra.trailer_url,
           vote_average: extra.vote_average,
           metadata_provider: extra.provider,
           metadata_url: extra.url,
@@ -122,45 +130,37 @@ function MovieDetailPage() {
     }
   };
 
-  // Favorites state synced with localStorage
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("lv-favorites") || "[]";
-      const favs = JSON.parse(raw);
-      setIsFavorite(favs.some((f: any) => f.slug === slug));
-    } catch {
-      // ignore
+    if (isAuthenticated && cloudFavorites) {
+      setIsFavorite(cloudFavorites.some((favorite) => favorite.slug === slug));
+      return;
     }
-  }, [slug]);
+    try {
+      const favs = JSON.parse(localStorage.getItem("lv-favorites") || "[]");
+      setIsFavorite(favs.some((favorite: MovieCard) => favorite.slug === slug));
+    } catch {
+      setIsFavorite(false);
+    }
+  }, [slug, isAuthenticated, cloudFavorites]);
 
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
     if (!movie) return;
     try {
-      const raw = localStorage.getItem("lv-favorites") || "[]";
-      let favs: MovieCard[] = JSON.parse(raw);
-      const exists = favs.some((f) => f.slug === slug);
-      if (exists) {
-        favs = favs.filter((f) => f.slug !== slug);
-        setIsFavorite(false);
-        triggerToast("Đã bỏ khỏi danh sách yêu thích");
+      if (isAuthenticated) {
+        if (isFavorite) await removeCloudFavorite({ slug });
+        else await setCloudFavorite({ slug, name: movie.name, poster: movie.poster, source: currentSource });
       } else {
-        favs.push({
-          slug: movie.slug,
-          name: movie.name,
-          origin_name: movie.origin_name,
-          poster: movie.poster,
-          thumb: movie.thumb,
-          source: currentSource,
-          year: movie.year,
-          quality: movie.quality,
-        });
-        setIsFavorite(true);
-        triggerToast("Đã thêm vào danh sách yêu thích");
+        const favs: MovieCard[] = JSON.parse(localStorage.getItem("lv-favorites") || "[]");
+        const next = isFavorite
+          ? favs.filter((favorite) => favorite.slug !== slug)
+          : [...favs, { slug: movie.slug, name: movie.name, origin_name: movie.origin_name, poster: movie.poster, thumb: movie.thumb, source: currentSource, year: movie.year, quality: movie.quality }];
+        localStorage.setItem("lv-favorites", JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent("lv-favorites-sync"));
       }
-      localStorage.setItem("lv-favorites", JSON.stringify(favs));
-      window.dispatchEvent(new CustomEvent("lv-favorites-sync"));
+      setIsFavorite(!isFavorite);
+      triggerToast(isFavorite ? "Đã bỏ khỏi danh sách yêu thích" : "Đã thêm vào danh sách yêu thích");
     } catch {
       triggerToast("Không thể cập nhật danh sách yêu thích");
     }
@@ -263,10 +263,13 @@ function MovieDetailPage() {
     });
   };
 
+  const trailerDialog = useRef<HTMLDialogElement>(null);
+  const [trailerSrc, setTrailerSrc] = useState<string | null>(null);
   const handleWatchTrailer = () => {
-    const trailer = (movie as any)?.trailer_url;
+    const trailer = trailerEmbed(movie?.trailer_url);
     if (trailer) {
-      window.open(trailer, "_blank");
+      setTrailerSrc(trailer);
+      trailerDialog.current?.showModal();
     } else {
       triggerToast("Phim chưa có đoạn giới thiệu từ nguồn này");
     }
@@ -305,6 +308,32 @@ function MovieDetailPage() {
 
   return (
     <div className="details-root">
+      <dialog
+        ref={trailerDialog}
+        onClose={() => setTrailerSrc(null)}
+        aria-label="Trailer phim"
+        style={{
+          margin: "auto",
+          width: "min(900px, 95vw)",
+          padding: 16,
+          background: "#13131b",
+          color: "white",
+          borderRadius: 16,
+        }}
+      >
+        <button type="button" autoFocus onClick={() => trailerDialog.current?.close()}>
+          Đóng trailer
+        </button>
+        {trailerSrc && (
+          <iframe
+            src={trailerSrc}
+            title={`Trailer ${movie?.name || "phim"}`}
+            style={{ width: "100%", aspectRatio: "16/9", border: 0 }}
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
+        )}
+      </dialog>
       {/* Sidebar */}
       <DetailSidebar onShowToast={triggerToast} />
 

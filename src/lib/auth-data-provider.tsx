@@ -1,6 +1,7 @@
-import { createClient, type Session, type User } from "@supabase/supabase-js";
+import type { Session, User } from "@supabase/supabase-js";
 import { ConvexProviderWithAuth } from "convex/react";
 import { ConvexReactClient } from "convex/react";
+import { supabase } from "./supabase";
 import {
   createContext,
   useCallback,
@@ -11,22 +12,23 @@ import {
   type ReactNode,
 } from "react";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const convexUrl = import.meta.env.VITE_CONVEX_URL;
 
-if (!supabaseUrl) throw new Error("Missing VITE_SUPABASE_URL");
-if (!supabaseKey) throw new Error("Missing VITE_SUPABASE_PUBLISHABLE_KEY");
 if (!convexUrl) throw new Error("Missing VITE_CONVEX_URL");
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export { supabase };
 const convex = new ConvexReactClient(convexUrl);
+
+export type AccountPreferences = { volume: number; speed: number };
+const DEFAULT_PREFERENCES: AccountPreferences = { volume: 1, speed: 1 };
 
 const AuthContext = createContext<{
   user: User | null;
   isLoading: boolean;
+  preferences: AccountPreferences;
+  savePreference: (patch: Partial<AccountPreferences>) => Promise<void>;
   signOut: () => Promise<void>;
-}>({ user: null, isLoading: true, signOut: async () => {} });
+}>({ user: null, isLoading: true, preferences: DEFAULT_PREFERENCES, savePreference: async () => {}, signOut: async () => {} });
 
 export const useAppAuth = () => useContext(AuthContext);
 
@@ -50,6 +52,18 @@ function useSupabaseAuth() {
 export function AuthDataProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const metadataPreferences = session?.user.user_metadata?.preferences;
+  const preferences: AccountPreferences = {
+    volume: Number.isFinite(metadataPreferences?.volume) ? Math.min(1, Math.max(0, metadataPreferences.volume)) : DEFAULT_PREFERENCES.volume,
+    speed: Number.isFinite(metadataPreferences?.speed) ? Math.min(2, Math.max(0.5, metadataPreferences.speed)) : DEFAULT_PREFERENCES.speed,
+  };
+
+  const savePreference = async (patch: Partial<AccountPreferences>) => {
+    if (!session) return;
+    const next = { ...preferences, ...patch };
+    const { error } = await supabase.auth.updateUser({ data: { preferences: next } });
+    if (error) throw error;
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -67,9 +81,11 @@ export function AuthDataProvider({ children }: { children: ReactNode }) {
     () => ({
       user: session?.user ?? null,
       isLoading,
+      preferences,
+      savePreference,
       signOut: async () => void (await supabase.auth.signOut()),
     }),
-    [session, isLoading],
+    [session, isLoading, preferences.volume, preferences.speed],
   );
 
   return (
