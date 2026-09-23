@@ -7,6 +7,7 @@
 **Kiến trúc:** Tách `PlayerControls.tsx` thành hook điều khiển, component chrome desktop/mobile, progress Mochi, popup settings và overlay trạng thái. `PlayerControls.tsx` chỉ phối hợp video/HLS và ghép component. Không thêm dependency; dùng React, native media APIs, Hls.js hiện có.
 
 **Ràng buộc ưu tiên:**
+
 - Mobile chạm vùng video chỉ hiện/ẩn controls; không play/pause. Play/pause qua nút giữa.
 - Không thêm UI “Đổi nguồn/Nguồn phát/Nguồn phim”. Fallback nội bộ có thể làm sau, không lộ picker.
 - Không mock thumbnail, subtitle, audio track, quality, intro/outro hoặc episode metadata.
@@ -20,6 +21,7 @@
 **Phạm vi:** Hoàn thiện yêu cầu vừa chốt; giảm tải `PlayerControls.tsx`.
 
 **Tạo:**
+
 - `src/components/player/hooks/usePlayerControlsVisibility.ts`
 - `src/components/player/PlayerControlsChrome.tsx`
 - `src/components/player/PlayerProgress.tsx`
@@ -27,10 +29,12 @@
 - `scripts/check-player-controls-visibility.mjs`
 
 **Sửa:**
+
 - `src/components/player/PlayerControls.tsx`
 - `src/styles/player.css` chỉ giữ layout player tổng quát/import style nếu cấu trúc hiện tại cho phép.
 
 **Hành vi:**
+
 1. Mobile tap vùng video hiện/ẩn controls, không đổi playback.
 2. Mobile có nút khóa; khi khóa chỉ còn nút unlock.
 3. Mobile giữa: `-10 | Play/Pause | +10`; progress gần đáy; nút phụ gọn.
@@ -39,6 +43,7 @@
 6. Progress Mochi giữ seek bằng click/drag, keyboard, wave và reduced-motion.
 
 **TDD/kiểm tra:**
+
 - RED/GREEN: `node scripts/check-player-controls-visibility.mjs`
 - `npx tsc --noEmit`
 - `node scripts/check-player-page-contract.mjs`
@@ -54,11 +59,13 @@
 ## Phase 2 — Điều khiển desktop đầy đủ, persistence
 
 **Tạo:**
+
 - `src/components/player/hooks/useMediaPreferences.ts`
 - `src/components/player/playerKeyboard.ts`
 - `scripts/check-player-desktop-controls.mjs`
 
 **Hành vi:**
+
 1. Phím: `Space/K`, `J/L`, `←/→`, `M`, `F`, `T`, `↑/↓`, `[ ]`, `0–9`.
 2. Animation overlay `-10/+10`.
 3. Volume slider desktop; ghi nhớ volume/mute hợp lệ.
@@ -76,12 +83,14 @@
 ## Phase 3 — Settings thực theo capability stream
 
 **Tạo:**
+
 - `src/components/player/PlayerSettings.tsx`
 - `src/components/player/hooks/useHlsCapabilities.ts`
 - `src/components/player/PlayerSettingsMobile.tsx` nếu bottom sheet khác đáng kể; nếu không dùng chung component + CSS.
 - `scripts/check-player-stream-capabilities.mjs`
 
 **Hành vi:**
+
 1. HLS quality lấy từ `hls.levels`; Auto và level thật; đổi không reset `currentTime`.
 2. Subtitle lấy từ native `textTracks`/HLS subtitle tracks; chỉ hiện lựa chọn thật.
 3. Audio track chỉ hiện khi stream có nhiều track thật.
@@ -96,11 +105,13 @@
 ## Phase 4 — Loading, buffering, retry, error Mochi
 
 **Tạo:**
+
 - `src/components/player/PlayerStatusOverlay.tsx`
 - `src/components/player/hooks/useStreamHealth.ts`
 - `scripts/check-player-stream-health.mjs`
 
 **Hành vi:**
+
 1. Mochi loading cho `waiting`, seeking, đổi quality; overlay nhẹ, không che lâu.
 2. Network warning dựa trên sự kiện stall/level recovery thật; không đoán bandwidth nếu thiếu API.
 3. Retry stream; fallback nội bộ qua nguồn đã resolve sẵn nếu có, không có UI picker.
@@ -112,11 +123,13 @@
 ## Phase 5 — Episode lifecycle
 
 **Tạo:**
+
 - `src/components/player/PlayerNextEpisode.tsx`
 - `src/components/player/hooks/useEpisodeLifecycle.ts`
 - `scripts/check-player-episode-lifecycle.mjs`
 
 **Hành vi:**
+
 1. Auto-next chỉ phim bộ, countdown 8 giây, `Xem ngay/Hủy`.
 2. Next episode từ danh sách server hiện có; không đoán slug/tập.
 3. Skip intro/recap/outro chỉ bật khi API có metadata thật.
@@ -128,12 +141,14 @@
 ## Phase 6 — Mobile gestures và preview
 
 **Tạo:**
+
 - `src/components/player/hooks/usePlayerGestures.ts`
 - `src/components/player/PlayerGestureOverlay.tsx`
 - `src/components/player/PlayerSeekPreview.tsx`
 - `scripts/check-player-mobile-gestures.mjs`
 
 **Hành vi:**
+
 1. Double tap trái/phải seek ±10; giữa không toggle playback do quyết định đã chốt.
 2. Kéo ngang seek với preview thời gian.
 3. Vuốt dọc trái mô phỏng brightness bằng CSS; reset/persist theo quyết định UX ở phase này.
@@ -148,6 +163,7 @@
 **Tạo/sửa theo hạ tầng Watch Party hiện có, không tạo player thứ hai.**
 
 **Hành vi:**
+
 1. Đồng bộ play/pause/seek/episode qua room thật; host điều phối; Admin chính có quyền đóng mọi phòng theo quy tắc dự án.
 2. Desktop chat panel, mobile bottom sheet.
 3. Reaction bay nhẹ + toggle; reduced-motion.
@@ -161,6 +177,7 @@
 ## Phase 8 — Tính năng tùy chọn sau audit
 
 Chỉ triển khai nếu không xung đột và capability thật có sẵn:
+
 - Native PiP, sau khi chứng minh không tồn tại mini-player/PiP cũ và không chồng Watch Party.
 - Screenshot frame chỉ khi canvas không bị CORS taint; không bật mặc định.
 - Share timestamp qua Web Share/Clipboard.

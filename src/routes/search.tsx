@@ -123,7 +123,7 @@ function SearchPage() {
 
           <button
             type="submit"
-            className="h-11 sm:h-12 px-6 rounded-xl bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 text-xs sm:text-sm font-bold text-white shadow-lg shadow-pink-600/30 transition duration-200 cursor-pointer flex items-center justify-center gap-2 shrink-0"
+            className="h-11 sm:h-12 px-6 max-[375px]:w-full rounded-xl bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-400 text-xs sm:text-sm font-bold text-white shadow-lg shadow-pink-600/30 transition duration-200 cursor-pointer flex items-center justify-center gap-2 shrink-0"
           >
             <SearchIcon className="w-4 h-4" />
             <span>Tìm kiếm</span>

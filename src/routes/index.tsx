@@ -2690,7 +2690,7 @@ export function HomePage() {
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl bg-[#12121a]/95 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/80 z-50 overflow-hidden">
+                <div className="fixed left-3 right-3 top-16 mt-3 max-h-[calc(100dvh-5rem)] rounded-2xl bg-[#12121a]/95 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/80 z-50 overflow-y-auto sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:w-96 sm:max-h-[70vh]">
                   <div className="flex items-center justify-between p-3.5 border-b border-white/[0.05]">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold uppercase tracking-wider text-zinc-200">

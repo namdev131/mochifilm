@@ -20,6 +20,14 @@
     max-width: 100%;
     overflow-x: auto;
   }
+  [data-admin-theme] button,
+  [data-admin-theme] a,
+  [data-admin-theme] input,
+  [data-admin-theme] select { min-height: 44px; }
+  [data-admin-theme] [role="dialog"] {
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

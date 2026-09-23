@@ -195,3 +195,15 @@ textarea {
 .notification-bell-list strong { font-size:12px; }
 .notification-bell-list small,.notification-bell-list time { color:#a1a1aa; font-size:10px; line-height:1.4; }
 
+@media (max-width: 640px) {
+  body { min-width: 0; min-height: 100dvh; }
+  .notification-bell-popover {
+    position: fixed;
+    inset-inline: 12px;
+    top: 72px;
+    width: auto;
+    max-height: calc(100dvh - 84px);
+  }
+  .notification-bell-list { max-height: calc(100dvh - 145px); }
+}
+

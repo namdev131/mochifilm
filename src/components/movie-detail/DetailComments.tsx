@@ -93,8 +93,16 @@ export const DetailComments: React.FC<DetailCommentsProps> = ({ movieSlug, onSho
                   padding: 2,
                 }}
               />
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginBottom: 3,
+                    minWidth: 0,
+                  }}
+                >
                   <strong>{c.author}</strong>
                   <small style={{ color: "var(--muted)", fontSize: 11 }}>{c.timeAgo}</small>
                 </div>

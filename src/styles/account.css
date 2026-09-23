@@ -1086,6 +1086,8 @@
 }
 
 /* RESPONSIVE BREAKPOINTS */
+.account-search-wrap { flex: 1; min-width: 0; }
+.account-search-wrap .account-search { width: 100%; }
 @media (max-width: 1050px) {
   .account-nav {
     display: none;
@@ -1173,4 +1175,9 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+@media (max-width: 480px) {
+  .account-topbar .wordmark,
+  .account-topbar .account-wordmark { display: none; }
 }

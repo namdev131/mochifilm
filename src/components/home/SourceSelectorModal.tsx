@@ -21,8 +21,8 @@ export const SourceSelectorModal: React.FC<SourceSelectorModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="w-full max-w-lg p-6 rounded-3xl bg-[#12121a] border border-white/10 shadow-2xl space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md">
+      <div className="w-full max-w-lg max-h-[calc(100dvh-1.5rem)] overflow-y-auto p-4 sm:p-6 rounded-3xl bg-[#12121a] border border-white/10 shadow-2xl space-y-6">
         <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-pink-500/15 border border-pink-500/30 text-pink-400">
@@ -52,15 +52,15 @@ export const SourceSelectorModal: React.FC<SourceSelectorModalProps> = ({
               onSelectSource("all");
               onClose();
             }}
-            className={`flex items-center justify-between p-3.5 rounded-2xl border transition cursor-pointer ${
+            className={`flex items-center max-sm:flex-col max-sm:items-stretch justify-between gap-2 p-3.5 rounded-2xl border transition cursor-pointer ${
               selectedSource === "all"
                 ? "bg-pink-600/15 border-pink-500 text-white"
                 : "bg-white/[0.02] hover:bg-white/[0.06] border-white/[0.06] text-zinc-300"
             }`}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-bold text-zinc-100">Tất cả nguồn (Gộp)</p>
                 <p className="text-[11px] text-zinc-400 font-mono">
                   Tự động hợp nhất phim đa nguồn
@@ -91,21 +91,21 @@ export const SourceSelectorModal: React.FC<SourceSelectorModalProps> = ({
                   onSelectSource(src.id);
                   onClose();
                 }}
-                className={`flex items-center justify-between p-3.5 rounded-2xl border transition cursor-pointer ${
+                className={`flex items-center max-sm:flex-col max-sm:items-stretch justify-between gap-2 p-3.5 rounded-2xl border transition cursor-pointer ${
                   isSelected
                     ? "bg-pink-600/15 border-pink-500 text-white"
                     : "bg-white/[0.02] hover:bg-white/[0.06] border-white/[0.06] text-zinc-300"
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <span
                     className={`w-2.5 h-2.5 rounded-full ${
                       isOnline ? "bg-emerald-400 shadow-[0_0_6px_#34d399]" : "bg-amber-400"
                     }`}
                   />
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-bold text-zinc-100">{src.label}</p>
-                    <p className="text-[11px] text-zinc-400 font-mono">{src.base}</p>
+                    <p className="break-all text-[11px] text-zinc-400 font-mono">{src.base}</p>
                   </div>
                 </div>
 

@@ -26,7 +26,7 @@ function ActorPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#09090d] text-zinc-100 font-sans selection:bg-pink-500 selection:text-white flex flex-col">
+    <div className="min-h-dvh bg-[#09090d] text-zinc-100 font-sans selection:bg-pink-500 selection:text-white flex flex-col">
       {/* Top Header */}
       <header className="sticky top-0 z-40 h-16 sm:h-20 px-4 sm:px-8 flex items-center justify-between bg-[#09090d]/85 backdrop-blur-xl border-b border-white/[0.05]">
         <div className="flex items-center gap-4">

@@ -887,6 +887,18 @@
   }
 }
 
+@media (max-width: 375px) {
+  .auth-topbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 0;
+  }
+  .auth-brand-logo { width: 132px; }
+  .auth-header-actions { width: 100%; justify-content: center; }
+  .auth-header-btn { min-height: 44px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

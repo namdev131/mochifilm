@@ -224,7 +224,7 @@ export function AdminTabPanels(props: Props) {
                 <input name="vip_expires_at" type="datetime-local" required className="min-h-10 rounded-lg border border-white/10 bg-[#140d17] px-3 text-white" />
               </label>
               <button type="submit" className="min-h-10 rounded-lg bg-amber-500 px-3 text-xs font-bold text-black">Tạo promocode</button>
-              {props.createdPromocode && <output className="rounded-lg bg-black/30 p-3 font-mono text-sm text-amber-200" aria-live="polite">{props.createdPromocode}</output>}
+              {props.createdPromocode && <output className="block max-w-full break-all rounded-lg bg-black/30 p-3 font-mono text-sm text-amber-200" aria-live="polite">{props.createdPromocode}</output>}
             </form>
             </div>
           )}
@@ -386,7 +386,7 @@ export function AdminTabPanels(props: Props) {
                 key={comment.id}
                 className="rounded-2xl border border-white/10 bg-[#140d17] p-4 flex flex-col sm:flex-row gap-4 justify-between"
               >
-                <div>
+                <div className="min-w-0 break-words">
                   <div className="flex flex-wrap gap-2 text-xs">
                     <b>{comment.user_name}</b>
                     <span className="text-[#b8a8b2]">{comment.user_email}</span>
@@ -449,14 +449,14 @@ export function AdminTabPanels(props: Props) {
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
               {props.filteredParties.map((party) => (
                 <Card key={party.id}>
-                  <div className="flex justify-between">
+                  <div className="flex min-w-0 justify-between gap-2">
                     <b>{party.code}</b>
                     <span className="text-xs">
                       {party.closed ? "Đã đóng" : party.join_locked ? "Đã khóa" : "Đang mở"}
                     </span>
                   </div>
-                  <h2 className="mt-2 font-bold">{party.name}</h2>
-                  <p className="text-xs text-[#b8a8b2]">
+                  <h2 className="mt-2 break-words font-bold">{party.name}</h2>
+                  <p className="break-all text-xs text-[#b8a8b2]">
                     {party.host_email || "Không rõ host"} · {party.member_count} người ·{" "}
                     {party.message_count} tin
                   </p>

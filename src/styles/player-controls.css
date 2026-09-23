@@ -873,6 +873,26 @@
   background: rgba(255, 255, 255, 0.18);
 }
 
+.player-page-root .player-settings-menu {
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .player-page-root .control-btn,
+  .player-page-root .player-top-btn,
+  .player-page-root .settings-close,
+  .player-page-root .settings-chip,
+  .player-page-root .drawer-tab-btn,
+  .player-page-root .drawer-close-btn,
+  .player-page-root .server-pill-btn,
+  .player-page-root .drawer-ep-badge,
+  .player-page-root .provider-chip {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
 @media (max-width: 860px) {
   /* Ẩn nút center-play trên mobile vì cụm player-mobile-primary-controls đã đảm nhận nút phát giữa */
   .player-page-root .center-play {
@@ -1587,9 +1607,17 @@
   }
 
   .player-page-root .player-in-drawer-content {
-    max-height: 92%;
+    max-height: calc(100dvh - 16px);
     border-radius: 16px;
   }
+
+  .player-page-root .player-in-drawer-backdrop { align-items: flex-end; padding: 8px; }
+  .player-page-root .player-drawer-body { min-height: 0; max-height: none; }
+  .player-page-root .stream-mode-badge,
+  .player-page-root #playerEpisodesBtn,
+  .player-page-root #playerServerBtn { display: none; }
+  .player-page-root .controls-row { gap: 4px; }
+  .player-page-root .time { padding-inline: 5px; }
 
   .player-page-root .drawer-episodes-grid {
     grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));

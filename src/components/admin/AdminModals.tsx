@@ -40,7 +40,7 @@ export function CreateUserModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-md p-6 rounded-2xl bg-[#140d17] border border-white/[0.08] shadow-2xl space-y-5">
+      <div className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto p-4 sm:p-6 rounded-2xl bg-[#140d17] border border-white/[0.08] shadow-2xl space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-[#251522] text-[#e27290] border border-[#e27290]/20">
@@ -182,7 +182,7 @@ export function WarnPartyModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-md p-6 rounded-2xl bg-[#140d17] border border-white/[0.08] shadow-2xl space-y-4">
+      <div className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto p-4 sm:p-6 rounded-2xl bg-[#140d17] border border-white/[0.08] shadow-2xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-[#2a1f1b] text-[#ecd9c6] border border-[#ecd9c6]/20">
@@ -263,7 +263,7 @@ export function DeleteConfirmModal({ data, onClose, onConfirm, isBusy }: DeleteC
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-sm p-6 rounded-2xl bg-[#140d17] border border-white/[0.08] shadow-2xl space-y-4">
+      <div className="w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto p-4 sm:p-6 rounded-2xl bg-[#140d17] border border-white/[0.08] shadow-2xl space-y-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-[#251219] border border-[#e27290]/30 text-[#e27290]">
             <Trash2 className="w-5 h-5" aria-hidden="true" />

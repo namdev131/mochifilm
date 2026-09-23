@@ -254,7 +254,7 @@ export function AdminPage() {
   return (
     <div
       data-admin-theme="dark"
-      className="min-h-screen bg-[#0c090f] text-[#fff8fa] font-sans antialiased"
+      className="min-h-dvh bg-[#0c090f] text-[#fff8fa] font-sans antialiased"
     >
       <a
         href="#main-content"
@@ -266,7 +266,7 @@ export function AdminPage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed right-5 top-5 z-[300] rounded-xl border border-white/10 bg-[#140d17] px-4 py-3 text-xs font-bold flex gap-2"
+          className="fixed left-5 right-5 top-5 z-[300] max-w-[calc(100vw-2.5rem)] break-words rounded-xl border border-white/10 bg-[#140d17] px-4 py-3 text-xs font-bold flex gap-2 sm:left-auto sm:max-w-md"
         >
           {toast.type === "error" ? (
             <X className="w-4 text-[#e27290]" />
@@ -286,7 +286,7 @@ export function AdminPage() {
         pendingCommentsCount={comments.filter((item) => item.status === "pending").length}
         isAdmin={isAdmin}
       />
-      <div className="desktop-admin-main lg:pl-[232px] xl:pr-[264px] min-h-screen flex flex-col">
+      <div className="desktop-admin-main lg:pl-[232px] xl:pr-[264px] min-h-dvh flex flex-col">
         <AdminTopbar
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           searchQuery={searchQuery}

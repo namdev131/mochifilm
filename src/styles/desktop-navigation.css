@@ -218,18 +218,21 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 12px;
     transform: none;
     translate: none;
     border-right: 0;
     border-bottom: 1px solid rgba(255,255,255,.1);
+    min-height: 76px;
+    overflow-x: auto;
   }
   .admin-navigation > div:first-child { border: 0; }
-  .admin-navigation > nav { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; flex: 1; }
+  .admin-navigation > nav { display: flex; flex-wrap: nowrap; gap: 4px; margin: 0; flex: 1; min-width: max-content; }
   .admin-navigation > nav > button { width: auto; margin: 0; white-space: nowrap; }
   .admin-navigation > div:last-child { position: static; }
-  .desktop-admin-main { padding-left: 0; }
+  .desktop-admin-main { padding-left: 0; min-height: calc(100dvh - 76px); }
+  .desktop-admin-main + aside { top: 76px; }
 
   .account-page-root .account-page-layout { grid-template-columns: minmax(0, 1fr); }
   .account-page-root .account-side { position: static; }

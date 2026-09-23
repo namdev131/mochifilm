@@ -1305,6 +1305,18 @@
   .details-root .actions {
     flex-wrap: wrap;
   }
+  .details-root .hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .details-root .hero-actions .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding-inline: 8px;
+  }
+  .details-root .hero-actions .primary { grid-column: 1 / -1; }
   .details-root .meta {
     gap: 5px;
   }
@@ -1314,10 +1326,17 @@
     font-size: 11px;
   }
   .details-root .btn {
-    height: 40px;
+    height: 44px;
     padding: 0 14px;
     font-size: 12px;
   }
+  .details-root .comment { align-items: flex-start; }
+  .details-root .comment > div { min-width: 0; }
+  .details-root .comment p { overflow-wrap: anywhere; }
+  .details-root .comment-form { display: grid; grid-template-columns: 1fr; }
+  .details-root .comment-form > div { justify-content: space-between; }
+  .details-root .comment-form select,
+  .details-root .comment-form button { min-height: 44px; }
   .details-root .cast {
     grid-template-columns: repeat(2, 1fr);
   }

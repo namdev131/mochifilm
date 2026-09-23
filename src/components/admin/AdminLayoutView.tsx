@@ -144,7 +144,7 @@ export function AdminTopbar({
       >
         <Menu className="mx-auto w-5" />
       </button>
-      <label className="relative flex-1 max-w-md">
+      <label className="relative min-w-0 flex-1 max-w-md">
         <Search className="absolute left-3 top-3.5 w-4 text-[#b8a8b2]" />
         <span className="sr-only">Tìm kiếm</span>
         <input
@@ -153,7 +153,7 @@ export function AdminTopbar({
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Tìm người dùng, phòng..."
-          className="min-h-11 w-full rounded-xl border border-white/10 bg-white/[.03] pl-10 pr-3 text-xs focus-visible:ring-2 focus-visible:ring-[#e27290]"
+          className="min-h-11 min-w-0 w-full rounded-xl border border-white/10 bg-white/[.03] pl-10 pr-3 text-xs focus-visible:ring-2 focus-visible:ring-[#e27290]"
         />
       </label>
       {isOfflineMode && (
@@ -249,7 +249,7 @@ export function AdminMobileDock({
   return (
     <nav
       aria-label="Điều hướng quản trị di động"
-      className="fixed bottom-2 inset-x-2 z-40 h-16 rounded-2xl border border-white/10 bg-[#140d17]/95 p-1 flex lg:hidden"
+      className="fixed bottom-[max(.5rem,env(safe-area-inset-bottom))] inset-x-2 z-40 h-16 rounded-2xl border border-white/10 bg-[#140d17]/95 p-1 flex lg:hidden"
     >
       {NAV.slice(0, 5).map(({ id, label, icon: Icon }) => (
         <button
